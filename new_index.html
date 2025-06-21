@@ -1,0 +1,3241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BatTracker Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@7.2.96/css/materialdesignicons.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0/dist/chartjs-adapter-moment.min.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=visualization"></script>
+    <style>
+        :root {
+            --sidebar-width: 280px;
+            --primary-color: #2c7c44;
+            --secondary-color: #5cb85c;
+            --accent-color: #4a9d48;
+            --dark-color: #1a2e22;
+            --light-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --body-bg: #f5f7f6;
+            --text-color: #333;
+            --text-light: #6c757d;
+        }
+
+        [data-bs-theme="dark"] {
+            --primary-color: #3aa76d;
+            --secondary-color: #4dbd74;
+            --accent-color: #5cb85c;
+            --dark-color: #0d1f15;
+            --light-color: #212529;
+            --card-bg: #2c3e33;
+            --body-bg: #1a2e22;
+            --text-color: #e9ecef;
+            --text-light: #adb5bd;
+        }
+
+        body {
+            background-color: var(--body-bg);
+            color: var(--text-color);
+            display: flex;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: all 0.3s;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: linear-gradient(135deg, var(--dark-color), #1a1a1a);
+            color: white;
+            position: fixed;
+            height: 100vh;
+            padding: 1rem;
+            box-shadow: 4px 0 15px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 1.5rem;
+        }
+
+        .sidebar-header h3 {
+            color: white;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 0.5rem;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s;
+            gap: 0.75rem;
+        }
+
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background-color: rgba(44, 124, 68, 0.2);
+            color: white;
+        }
+
+        .sidebar-menu a i {
+            font-size: 1.25rem;
+        }
+
+        .sidebar-footer {
+            position: sticky;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            background: linear-gradient(135deg, var(--dark-color), #1a1a1a);
+        }
+
+        /* Main Content Styles */
+        .main-content {
+            flex: 1;
+            margin-left: var(--sidebar-width);
+            padding: 2rem;
+            transition: all 0.3s;
+        }
+
+        /* Card Styles */
+        .card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            margin-bottom: 1.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+
+        .card-header {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            font-weight: 600;
+            border-radius: 12px 12px 0 0 !important;
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        /* Loading Spinner */
+        .loading-spinner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+        }
+
+        .spinner-text {
+            color: white;
+            margin-top: 1rem;
+            font-size: 1.1rem;
+        }
+
+        /* Species Styles */
+        .species-image {
+            max-height: 250px;
+            object-fit: contain;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        /* Audio Player */
+        .audio-player {
+            width: 100%;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        /* Sensor Data */
+        .sensor-data {
+            max-height: 300px;
+            overflow-y: auto;
+            background-color: var(--light-color);
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        /* Chat Interface */
+        .chat-container {
+            height: 500px;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+            background-color: var(--light-color);
+        }
+
+        .chat-input {
+            border-top: 1px solid rgba(0,0,0,0.1);
+            padding: 1rem;
+            background-color: var(--card-bg);
+        }
+
+        .message {
+            margin-bottom: 1rem;
+            max-width: 80%;
+            padding: 0.75rem 1rem;
+            border-radius: 18px;
+        }
+
+        .user-message {
+            margin-left: auto;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 18px 18px 4px 18px;
+        }
+
+        .bot-message {
+            margin-right: auto;
+            background-color: var(--light-color);
+            border-radius: 18px 18px 18px 4px;
+        }
+
+        /* Timeline */
+        .timeline-container {
+            height: 400px;
+            position: relative;
+        }
+
+        /* Tabs */
+        .nav-tabs .nav-link {
+            border: none;
+            color: var(--text-light);
+            font-weight: 500;
+            padding: 0.75rem 1.25rem;
+        }
+
+        .nav-tabs .nav-link.active {
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+            background-color: transparent;
+        }
+
+        /* Badges */
+        .badge {
+            font-weight: 500;
+            padding: 0.35em 0.65em;
+        }
+
+        /* Client Tree */
+        .client-tree {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .client-tree li {
+            margin-bottom: 0.5rem;
+        }
+
+        .client-tree a {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            color: var(--text-color);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .client-tree a:hover {
+            background-color: rgba(44, 124, 68, 0.1);
+        }
+
+        .client-tree .folder-items {
+            padding-left: 1.5rem;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .client-tree .folder-items.show {
+            display: block;
+        }
+
+        /* Map Container */
+        .map-container {
+            height: 500px;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        /* Metadata Table */
+        .metadata-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .metadata-table th, .metadata-table td {
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            text-align: left;
+        }
+
+        .metadata-table th {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        /* Alert Card */
+        .alert-card {
+            border-left: 4px solid var(--primary-color);
+        }
+
+        /* News Feed */
+        .news-item {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            transition: all 0.2s;
+        }
+
+        .news-item:hover {
+            background-color: rgba(44, 124, 68, 0.05);
+        }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .sidebar-toggle {
+                display: block !important;
+            }
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--light-color);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--accent-color);
+        }
+
+        /* Floating Action Button */
+        .fab {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(44, 124, 68, 0.4);
+            cursor: pointer;
+            z-index: 100;
+            transition: all 0.2s;
+        }
+
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(44, 124, 68, 0.6);
+        }
+
+        /* Species Gallery */
+        .species-card {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .species-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .species-card img {
+            height: 180px;
+            object-fit: cover;
+            border-radius: 8px 8px 0 0;
+        }
+
+        /* Custom Toggle */
+        .sidebar-toggle {
+            display: none;
+            position: fixed;
+            top: 1rem;
+            left: 1rem;
+            z-index: 1100;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1100;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .animate-fade {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        /* Status Indicators */
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .status-online {
+            background-color: #28a745;
+        }
+
+        .status-offline {
+            background-color: #dc3545;
+        }
+
+        .status-warning {
+            background-color: #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Toggle Button (Mobile) -->
+    <button class="sidebar-toggle" id="sidebarToggle">
+        <i class="bi bi-list"></i>
+    </button>
+
+    <!-- Theme Toggle -->
+    <button class="theme-toggle" id="themeToggle">
+        <i class="bi bi-moon"></i>
+    </button>
+
+    <!-- Sidebar Navigation -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h3><i class="bi bi-soundwave"></i> BatTracker Pro</h3>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li>
+                <a href="#" class="active" data-tab="dashboard">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" data-tab="clients-view">
+                    <i class="bi bi-pc-display-horizontal"></i>
+                    <span>Clients & Calls</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" data-tab="species-analysis">
+                    <i class="bi bi-binoculars"></i>
+                    <span>Species Analysis</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" data-tab="call-timeline">
+                    <i class="bi bi-graph-up"></i>
+                    <span>Call Timeline</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" data-tab="location-map">
+                    <i class="bi bi-map"></i>
+                    <span>Location Map</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" data-tab="ai-assistant">
+                    <i class="bi bi-robot"></i>
+                    <span>AI Assistant</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" data-tab="alerts">
+                    <i class="bi bi-bell"></i>
+                    <span>Alerts</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" data-tab="reports">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span>Reports</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" data-tab="news-feed">
+                    <i class="bi bi-newspaper"></i>
+                    <span>News Feed</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <div class="card bg-dark border-0">
+                <div class="card-body p-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <small class="text-muted">Last Updated</small>
+                            <div id="lastUpdated">{{ timestamp | datetimeformat }}</div>
+                        </div>
+                        <button class="btn btn-sm btn-outline-light" onclick="location.reload()">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="mainContent">
+        <!-- Dashboard Tab -->
+        <div class="tab-content" id="dashboard">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="bi bi-speedometer2 text-primary me-2"></i> Bat Calls Dashboard</h2>
+                <div>
+                    <span class="badge bg-primary">
+                        <i class="bi bi-clock"></i> <span id="currentTime">Loading...</span>
+                    </span>
+                    <span class="badge bg-success ms-2">
+                        <i class="bi bi-pc-display-horizontal"></i> <span id="clientStatus">Client {{ client_id or '1' }}</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Status Overview -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <i class="bi bi-server me-2"></i> Server
+
+
+continue from:
+
+<!-- Status Overview -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <i class="bi bi-server me-2"></i> Server                             Status
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="status-indicator status-online"></span>
+                                <strong>Server Online</strong>
+                            </div>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Last Sync
+                                    <span class="badge bg-primary">{{ timestamp | datetimeformat }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Storage
+                                    <div class="progress w-50" style="height: 8px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: 65%" aria-valuenow="65" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Active Clients
+                                    <span class="badge bg-primary">{{ clients|length or 1 }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <i class="bi bi-pc-display-horizontal me-2"></i> Client Status
+                        </div>
+                        <div class="card-body">
+                            {% if client_id %}
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="status-indicator status-online"></span>
+                                <strong>Client {{ client_id }} Online</strong>
+                            </div>
+                            {% else %}
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="status-indicator status-warning"></span>
+                                <strong>No Active Client Selected</strong>
+                            </div>
+                            <!-- endif -->
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Last Data
+                                    <span class="badge bg-primary">{{ timestamp | datetimeformat }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Battery
+                                    <div class="progress w-50" style="height: 8px;">
+                                        <div class="progress-bar bg-success" role="progressbar" style="width: 78%" aria-valuenow="78" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Storage
+                                    <div class="progress w-50" style="height: 8px;">
+                                        <div class="progress-bar bg-warning" role="progressbar" style="width: 45%" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <i class="bi bi-activity me-2"></i> System Health
+                        </div>
+                        <div class="card-body">
+                            <canvas id="healthChart" height="200"></canvas>
+                            <div class="mt-3 text-center">
+                                <span class="badge bg-success me-2"><i class="bi bi-check-circle"></i> API Online</span>
+                                <span class="badge bg-success"><i class="bi bi-check-circle"></i> Ollama Connected</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Client Data Section -->
+            <div class="row">
+                <!-- Sensor Data -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-thermometer-half me-2"></i> Environmental Data
+                        </div>
+                        <div class="card-body">
+                            {% if sensor_data %}
+                                <div class="row">
+                                    <!-- GPS Status -->
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card h-100 bg-light">
+                                            <div class="card-body text-center">
+                                                <i class="bi bi-geo-alt-fill text-primary" style="font-size: 2rem;"></i>
+                                                <h5 class="mt-2">GPS Status</h5>
+                                                <div class="display-4 mb-2 {{ 'text-success' if sensor_data.gps_status == 'linked' else 'text-danger' }}">
+                                                    {{ sensor_data.gps_status | upper }}
+                                                </div>
+                                                <small class="text-muted">Satellite connection</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Temperature -->
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card h-100 bg-light">
+                                            <div class="card-body text-center">
+                                                <i class="bi bi-thermometer-half text-danger" style="font-size: 2rem;"></i>
+                                                <h5 class="mt-2">Temperature</h5>
+                                                <div class="display-4 mb-2">
+                                                    {{ "%.1f"|format(sensor_data.temperature_C) }}°C
+                                                </div>
+                                                <small class="text-muted">
+                                                    {% if sensor_data.temperature_C > 30 %}
+                                                        <i class="bi bi-exclamation-triangle text-warning"></i> Warm conditions
+                                                    {% elif sensor_data.temperature_C < 10 %}
+                                                        <i class="bi bi-exclamation-triangle text-info"></i> Cool conditions
+                                                    {% else %}
+                                                        <i class="bi bi-check-circle text-success"></i> Ideal range
+                                                    {% endif %}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Humidity -->
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card h-100 bg-light">
+                                            <div class="card-body text-center">
+                                                <i class="bi bi-droplet-half text-info" style="font-size: 2rem;"></i>
+                                                <h5 class="mt-2">Humidity</h5>
+                                                <div class="display-4 mb-2">
+                                                    {{ "%.1f"|format(sensor_data['humidity_%']) }}%
+                                                </div>
+                                                <div class="progress mt-2" style="height: 8px;">
+                                                    <div class="progress-bar bg-info" 
+                                                         role="progressbar" 
+                                                         style="width: {{ sensor_data['humidity_%']|default(0, true)|float }}%;"
+                                                         aria-valuenow="{{ sensor_data['humidity_%'] }}" 
+                                                         aria-valuemin="0" 
+                                                         aria-valuemax="100"></div>
+                                                </div>
+                                                <small class="text-muted">Relative humidity</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Pressure -->
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card h-100 bg-light">
+                                            <div class="card-body text-center">
+                                                <i class="bi bi-speedometer2 text-warning" style="font-size: 2rem;"></i>
+                                                <h5 class="mt-2">Pressure</h5>
+                                                <div class="display-4 mb-2">
+                                                    {{ "%.1f"|format(sensor_data.pressure_hPa) }} hPa
+                                                </div>
+                                                <small class="text-muted">
+                                                    {% if sensor_data.pressure_hPa < 950 %}
+                                                        <i class="bi bi-cloud-rain text-primary"></i> Low pressure
+                                                    {% elif sensor_data.pressure_hPa > 1020 %}
+                                                        <i class="bi bi-sun text-warning"></i> High pressure
+                                                    {% else %}
+                                                        <i class="bi bi-check-circle text-success"></i> Normal
+                                                    {% endif %}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Light -->
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card h-100 bg-light">
+                                            <div class="card-body text-center">
+                                                <i class="bi bi-brightness-high text-warning" style="font-size: 2rem;"></i>
+                                                <h5 class="mt-2">Light</h5>
+                                                <div class="display-4 mb-2">
+                                                    {{ "%.1f"|format(sensor_data.light_lux) }} lux
+                                                </div>
+                                                <small class="text-muted">
+                                                    {% if sensor_data.light_lux < 10 %}
+                                                        <i class="bi bi-moon-stars text-secondary"></i> Dark
+                                                    {% elif sensor_data.light_lux > 1000 %}
+                                                        <i class="bi bi-sun text-warning"></i> Bright
+                                                    {% else %}
+                                                        <i class="bi bi-brightness-alt-high text-success"></i> Moderate
+                                                    {% endif %}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Summary Card -->
+                                    <div class="col-md-6 mb-3">
+                                        <div class="card h-100 bg-light">
+                                            <div class="card-body">
+                                                <h5 class="card-title text-center">
+                                                    <i class="bi bi-clipboard-data text-primary"></i> Environment Summary
+                                                </h5>
+                                                <ul class="list-group list-group-flush">
+                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                        Conditions
+                                                        <span class="badge {{ 'bg-success' if sensor_data.temperature_C > 10 and sensor_data.temperature_C < 30 else 'bg-warning' }}">
+                                                            {{ 'Ideal' if sensor_data.temperature_C > 10 and sensor_data.temperature_C < 30 else 'Suboptimal' }}
+                                                        </span>
+                                                    </li>
+                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                        Data Quality
+                                                        <span class="badge {{ 'bg-success' if sensor_data.gps_status == 'linked' else 'bg-danger' }}">
+                                                            {{ 'Complete' if sensor_data.gps_status == 'linked' else 'Partial' }}
+                                                        </span>
+                                                    </li>
+                                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                        Night Phase
+                                                        <span class="badge {{ 'bg-dark' if sensor_data.light_lux < 10 else 'bg-info' }}">
+                                                            {{ 'Night' if sensor_data.light_lux < 10 else 'Day' }}
+                                                        </span>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4 text-muted">
+                                    <i class="bi bi-thermometer" style="font-size: 2rem;"></i>
+                                    <p class="mt-2">No sensor data available</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <!-- Camera Image -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-camera me-2"></i> Visual Capture
+                        </div>
+                        <div class="card-body text-center">
+                            {% if camera_image %}
+                                <img src="{{ camera_image }}" class="img-fluid rounded" alt="Camera Image">
+                                <div class="mt-2">
+                                    <small class="text-muted">Client {{ client_id or '1' }} - {{ timestamp | datetimeformat }}</small>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4 text-muted">
+                                    <i class="bi bi-camera" style="font-size: 2rem;"></i>
+                                    <p class="mt-2">No camera image available</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-4">
+                <!-- Spectogram Analysis -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-graph-up me-2"></i> Spectogram Analysis
+                        </div>
+                        <div class="card-body">
+                            {% if spectogram_image %}
+                                <div class="text-center mb-3">
+                                    <img src="{{ spectogram_image }}" class="img-fluid rounded" alt="Spectogram">
+                                </div>
+                                {% if species_prediction %}
+                                    <div class="alert alert-success">
+                                        <strong>Predicted Species:</strong> {{ species_prediction }}
+                                        {% if confidence %}
+                                            <div class="mt-1">
+                                                <small>Confidence: {{ confidence }}%</small>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="text-center py-4 text-muted">
+                                    <i class="bi bi-image" style="font-size: 2rem;"></i>
+                                    <p class="mt-2">No spectogram available</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bat Species -->
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-binoculars me-2"></i> Species Identification
+                        </div>
+                        <div class="card-body text-center">
+                            {% if species_image %}
+                                <img src="{{ species_image }}" class="species-image" alt="Bat Species">
+                                <h5 class="mt-3">{{ species_prediction }}</h5>
+                                <div class="mt-3">
+                                    <button class="btn btn-primary" onclick="showSpeciesTab()">
+                                        <i class="bi bi-search me-1"></i> View All Species
+                                    </button>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4 text-muted">
+                                    <i class="bi bi-question-circle" style="font-size: 2rem;"></i>
+                                    <p class="mt-2">No species identified</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audio Player -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-mic me-2"></i> Audio Recording
+                        </div>
+                        <div class="card-body">
+                            <div id="audioSection">
+                                <!-- Audio player and metadata will be rendered here by JavaScript -->
+                            </div>
+                            <script>
+                                // Example: Replace this with your actual logic to check for audio_file/audio_metadata
+                                const audioFile = null; // Set to audio file URL if available
+                                const audioMetadata = null; // Set to metadata object if available
+
+                                const audioSection = document.getElementById('audioSection');
+                                if (audioFile) {
+                                    let html = `
+                                        <audio controls class="audio-player">
+                                            <source src="${audioFile}" type="audio/wav">
+                                            Your browser does not support the audio element.
+                                        </audio>
+                                    `;
+                                    if (audioMetadata) {
+                                        html += `
+                                            <div class="mt-3">
+                                                <h6>Audio Metadata</h6>
+                                                <table class="metadata-table">
+                                                    <tr>
+                                                        <th>File Size</th>
+                                                        <td>${audioMetadata.size}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Last Modified</th>
+                                                        <td>${audioMetadata.modified}</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Duration</th>
+                                                        <td>320ms (estimated)</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Sample Rate</th>
+                                                        <td>192kHz</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <th>Bit Depth</th>
+                                                        <td>16-bit</td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                        `;
+                                    }
+                                    html += `
+                                        <div class="mt-3">
+                                            <button class="btn btn-outline-primary me-2">
+                                                <i class="bi bi-download"></i> Download
+                                            </button>
+                                            <button class="btn btn-outline-secondary">
+                                                <i class="bi bi-share"></i> Share
+                                            </button>
+                                        </div>
+                                    `;
+                                    audioSection.innerHTML = html;
+                                } else {
+                                    audioSection.innerHTML = `
+                                        <div class="text-center py-3 text-muted">
+                                            <i class="bi bi-mic" style="font-size: 2rem;"></i>
+                                            <p class="mt-2">No audio recording available</p>
+                                        </div>
+                                    `;
+                                }
+                            </script>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Clients & Calls Tab -->
+        <div class="tab-content d-none" id="clients-view">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="bi bi-pc-display-horizontal text-primary me-2"></i> Clients & Calls</h2>
+                <div>
+                    <button class="btn btn-primary" onclick="refreshClients()">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-diagram-3 me-2"></i> Client Hierarchy
+                        </div>
+                        <div class="card-body">
+                            <ul class="client-tree" id="clientTree">
+                                <li>
+                                    <a href="#" onclick="showClientDetails('server')">
+                                        <i class="bi bi-server me-2"></i> Server
+                                        <span class="badge bg-primary ms-auto">Online</span>
+                                    </a>
+                                </li>
+                                {% for client_id, client in clients.items() %}
+                                <li>
+                                    <a href="#" onclick="toggleFolder('client{{ client_id }}')">
+                                        <i class="bi bi-pc-display-horizontal me-2"></i> Client {{ client_id }}
+                                        <span class="badge bg-success ms-auto">Online</span>
+                                    </a>
+                                    <ul class="folder-items" id="client{{ client_id }}Items">
+                                        {% for folder in client.folders %}
+                                        <li>
+                                            <a href="#" onclick="loadClientFolder('{{ client_id }}', '{{ folder }}')">
+                                                <i class="bi bi-folder me-2"></i> {{ folder }}
+                                            </a>
+                                        </li>
+                                        {% endfor %}
+                                    </ul>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-info-circle me-2"></i> Client Details
+                        </div>
+                        <div class="card-body" id="clientDetails">
+                            <div class="text-center py-5">
+                                <i class="bi bi-pc-display-horizontal" style="font-size: 3rem;"></i>
+                                <h4 class="mt-3">Select a client or call to view details</h4>
+                                <p class="text-muted">Click on any client in the hierarchy to view its details</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Species Analysis Tab -->
+        <div class="tab-content d-none" id="species-analysis">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="bi bi-binoculars text-primary me-2"></i> Species Analysis</h2>
+                <div>
+                    <div class="input-group" style="width: 300px;">
+                        <input type="text" class="form-control" placeholder="Search species..." id="speciesSearch">
+                        <button class="btn btn-primary" type="button">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-pie-chart me-2"></i> Species Distribution
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <canvas id="speciesPieChart" height="300"></canvas>
+                                </div>
+                                <div class="col-md-6">
+                                    <canvas id="speciesBarChart" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-collection me-2"></i> Recordings by Species
+                        </div>
+                        <div class="card-body">
+                            <ul class="nav nav-tabs" id="speciesTabs" role="tablist">
+                                <!-- Species tabs will be generated here -->
+                            </ul>
+                            <div class="tab-content pt-3" id="speciesTabContent">
+                                <!-- Species content will be generated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Call Timeline Tab -->
+        <div class="tab-content d-none" id="call-timeline">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="bi bi-graph-up text-primary me-2"></i> Call Timeline</h2>
+                <div>
+                    <select class="form-select" id="timelineRange" style="width: 200px;">
+                        <option value="24h">Last 24 Hours</option>
+                        <option value="7d">Last 7 Days</option>
+                        <option value="30d">Last 30 Days</option>
+                        <option value="all">All Time</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-calendar-event me-2"></i> Activity Timeline
+                        </div>
+                        <div class="card-body">
+                            <canvas id="timelineChart" height="400"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-clock-history me-2"></i> Daily Patterns
+                        </div>
+                        <div class="card-body">
+                            <canvas id="dailyPatternChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-moon-stars me-2"></i> Nightly Activity
+                        </div>
+                        <div class="card-body">
+                            <canvas id="nightlyActivityChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Location Map Tab -->
+        <div class="tab-content d-none" id="location-map">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="bi bi-map text-primary me-2"></i> Location Map</h2>
+                <div>
+                    <button class="btn btn-primary" onclick="refreshMap()">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+                    </button>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-globe me-2"></i> Deployment Locations
+                        </div>
+                        <div class="card-body">
+                            <div class="map-container" id="map"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-signpost me-2"></i> Location Details
+                        </div>
+                        <div class="card-body" id="locationDetails">
+                            <div class="text-center py-4">
+                                <i class="bi bi-geo-alt" style="font-size: 2rem;"></i>
+                                <p class="mt-2">Click on a map marker to view location details</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-activity me-2"></i> Network Status
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="status-indicator status-online"></span>
+                                <strong>Server Connection: Active</strong>
+                            </div>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Client 1 Connection
+                                    <span class="badge bg-success">Active</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Client 2 Connection
+                                    <span class="badge bg-success">Active</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Data Transfer Rate
+                                    <span class="badge bg-primary">12.4 Mbps</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Last Data Sync
+                                    <span class="badge bg-primary">{{ timestamp | datetimeformat }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- AI Assistant Tab -->
+        <div class="tab-content d-none" id="ai-assistant">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="bi bi-robot text-primary me-2"></i> AI Assistant</h2>
+                <div>
+                    <span class="badge bg-success">
+                        <i class="bi bi-lightning-charge"></i> Powered by Ollama
+                    </span>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-lightbulb me-2"></i> Quick Actions
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-outline-primary text-start" onclick="askAI('What species did we detect most frequently?')">
+                                    <i class="bi bi-question-circle me-2"></i> Frequent Species
+                                </button>
+                                <button class="btn btn-outline-primary text-start" onclick="askAI('Show me unusual Bat activity patterns.')">
+                                    <i class="bi bi-graph-up-arrow me-2"></i> Activity Patterns
+                                </button>
+                                <button class="btn btn-outline-primary text-start" onclick="askAI('Compare today\'s data with historical averages.')">
+                                    <i class="bi bi-clipboard-data me-2"></i> Data Comparison
+                                </button>
+                                <button class="btn btn-outline-primary text-start" onclick="askAI('Suggest conservation actions based on our data.')">
+                                    <i class="bi bi-heart me-2"></i> Conservation Tips
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <i class="bi bi-info-circle me-2"></i> Current Context
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Last Detection
+                                    <span class="badge bg-primary">{{ timestamp | datetimeformat }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Current Species
+                                    <span class="badge bg-success">{{ species_prediction or 'Unknown' }}</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Confidence
+                                    <span class="badge bg-info">{{ confidence or 'N/A' }}%</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    Active Client
+                                    <span class="badge bg-primary">Client {{ client_id or '1' }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-chat-left-text me-2"></i> BatCall AI Assistant
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="chat-container">
+                                <div class="chat-messages" id="chatMessages">
+                                    <div class="message bot-message">
+                                        Hello! I'm your BatCall AI assistant. How can I help you with your Bat monitoring data today?
+                                    </div>
+                                </div>
+                                <div class="chat-input">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" placeholder="Ask about your Bat data..." id="aiQuestion">
+                                        <button class="btn btn-primary" type="button" id="askAIButton">
+                                            <i class="bi bi-send"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Alerts Tab -->
+        <div class="tab-content d-none" id="alerts">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="bi bi-bell text-primary me-2"></i> Alerts</h2>
+                <div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newAlertModal">
+                        <i class="bi bi-plus-circle me-1"></i> New Alert
+                    </button>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-list-check me-2"></i> Active Alerts
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Alert Name</th>
+                                            <th>Condition</th>
+                                            <th>Triggered</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Rare Species</td>
+                                            <td>Plecotus auritus detected</td>
+                                            <td>2 times</td>
+                                            <td><span class="badge bg-success">Active</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>High Activity</td>
+                                            <td>More than 20 calls/hour</td>
+                                            <td>5 times</td>
+                                            <td><span class="badge bg-success">Active</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td>Low Battery</td>
+                                            <td>Client battery below 20%</td>
+                                            <td>0 times</td>
+                                            <td><span class="badge bg-warning">Pending</span></td>
+                                            <td>
+                                                <button class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-eye"></i>
+                                                </button>
+                                                <button class="btn btn-sm btn-outline-danger">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- New Alert Modal -->
+            <div class="modal fade" id="newAlertModal" tabindex="-1" aria-labelledby="newAlertModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="newAlertModalLabel">Create New Alert</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="alertForm">
+                                <div class="mb-3">
+                                    <label for="alertName" class="form-label">Alert Name</label>
+                                    <input type="text" class="form-control" id="alertName" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="alertType" class="form-label">Alert Type</label>
+                                    <select class="form-select" id="alertType" required onchange="toggleAlertConditions()">
+                                        <option value="">Select alert type</option>
+                                        <option value="species">Species Detection</option>
+                                        <option value="activity">Activity Level</option>
+                                        <option value="system">System Status</option>
+                                        <option value="environment">Environmental</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3" id="speciesCondition" style="display: none;">
+                                    <label for="speciesSelect" class="form-label">Species</label>
+                                    <select class="form-select" id="speciesSelect">
+                                        <option value="Pipistrellus pipistrellus">Common Pipistrelle</option>
+                                        <option value="Myotis daubentonii">Daubenton's Bat</option>
+                                        <option value="Nyctalus noctula">Noctule Bat</option>
+                                        <option value="Plecotus auritus">Brown Long-eared Bat</option>
+                                        <option value="Eptesicus serotinus">Serotine Bat</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3" id="activityCondition" style="display: none;">
+                                    <label for="activityThreshold" class="form-label">Calls per hour threshold</label>
+                                    <input type="number" class="form-control" id="activityThreshold" min="1">
+                                </div>
+                                <div class="mb-3" id="systemCondition" style="display: none;">
+                                    <label for="systemStatus" class="form-label">System Status</label>
+                                    <select class="form-select" id="systemStatus">
+                                        <option value="battery_low">Battery Low</option>
+                                        <option value="storage_full">Storage Full</option>
+                                        <option value="connection_lost">Connection Lost</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3" id="environmentCondition" style="display: none;">
+                                    <label for="environmentParameter" class="form-label">Parameter</label>
+                                    <select class="form-select" id="environmentParameter">
+                                        <option value="temperature">Temperature</option>
+                                        <option value="humidity">Humidity</option>
+                                        <option value="pressure">Pressure</option>
+                                        <option value="light">Light</option>
+                                    </select>
+                                    <div class="row mt-2">
+                                        <div class="col-md-6">
+                                            <label for="minValue" class="form-label">Min Value</label>
+                                            <input type="number" class="form-control" id="minValue">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="maxValue" class="form-label">Max Value</label>
+                                            <input type="number" class="form-control" id="maxValue">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="alertClient" class="form-label">Client</label>
+                                    <select class="form-select" id="alertClient">
+                                        <option value="all">All Clients</option>
+                                        <option value="1">Client 1</option>
+                                        <option value="2">Client 2</option>
+                                        <option value="server">Server</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="alertSeverity" class="form-label">Severity</label>
+                                    <select class="form-select" id="alertSeverity" required>
+                                        <option value="low">Low</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="high">High</option>
+                                        <option value="critical">Critical</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="alertNotify" checked>
+                                    <label class="form-check-label" for="alertNotify">Send notification</label>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="alertSound" checked>
+                                    <label class="form-check-label" for="alertSound">Play sound alert</label>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="saveAlert()">Save Alert</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Tab -->
+        <div class="tab-content d-none" id="reports">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="bi bi-file-earmark-text text-primary me-2"></i> Reports</h2>
+                <div>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newReportModal">
+                        <i class="bi bi-plus-circle me-1"></i> Generate Report
+                    </button>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-folder me-2"></i> Report Templates
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group">
+                                <a href="#" class="list-group-item list-group-item-action" onclick="loadReportTemplate('daily')">
+                                    <i class="bi bi-file-text me-2"></i> Daily Summary
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action" onclick="loadReportTemplate('weekly')">
+                                    <i class="bi bi-calendar-week me-2"></i> Weekly Analysis
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action" onclick="loadReportTemplate('species')">
+                                    <i class="bi bi-binoculars me-2"></i> Species Report
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action" onclick="loadReportTemplate('client')">
+                                    <i class="bi bi-pc-display me-2"></i> Client Report
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action" onclick="loadReportTemplate('custom')">
+                                    <i class="bi bi-gear me-2"></i> Custom Report
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-file-earmark-text me-2"></i> Report Preview
+                        </div>
+                        <div class="card-body" id="reportPreview">
+                            <div class="text-center py-5">
+                                <i class="bi bi-file-earmark-text" style="font-size: 3rem;"></i>
+                                <h4 class="mt-3">Select a report template</h4>
+                                <p class="text-muted">Choose a template from the left panel to preview or generate a new report</p>
+                            </div>
+                        </div>
+                        <div class="card-footer d-flex justify-content-end">
+                            <button class="btn btn-primary me-2" id="generateReportBtn" disabled>
+                                <i class="bi bi-file-earmark-pdf me-1"></i> Generate PDF
+                            </button>
+                            <button class="btn btn-success" id="exportReportBtn" disabled>
+                                <i class="bi bi-file-earmark-excel me-1"></i> Export Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- New Report Modal -->
+            <div class="modal fade" id="newReportModal" tabindex="-1" aria-labelledby="newReportModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="newReportModalLabel">Generate New Report</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="reportForm">
+                                <div class="mb-3">
+                                    <label for="reportTitle" class="form-label">Report Title</label>
+                                    <input type="text" class="form-control" id="reportTitle" required>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="reportType" class="form-label">Report Type</label>
+                                        <select class="form-select" id="reportType" required>
+                                            <option value="summary">Summary Report</option>
+                                            <option value="analysis">Analysis Report</option>
+                                            <option value="species">Species Report</option>
+                                            <option value="client">Client Report</option>
+                                            <option value="custom">Custom Report</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="reportFormat" class="form-label">Format</label>
+                                        <select class="form-select" id="reportFormat" required>
+                                            <option value="pdf">PDF</option>
+                                            <option value="excel">Excel</option>
+                                            <option value="both">Both</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="reportClient" class="form-label">Client (optional)</label>
+                                    <select class="form-select" id="reportClient">
+                                        <option value="all">All Clients</option>
+                                        <option value="1">Client 1</option>
+                                        <option value="2">Client 2</option>
+                                    </select>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="reportStartDate" class="form-label">Start Date</label>
+                                        <input type="date" class="form-control" id="reportStartDate">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="reportEndDate" class="form-label">End Date</label>
+                                        <input type="date" class="form-control" id="reportEndDate">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="reportSections" class="form-label">Include Sections</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="sectionSummary" checked>
+                                        <label class="form-check-label" for="sectionSummary">Executive Summary</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="sectionSpecies" checked>
+                                        <label class="form-check-label" for="sectionSpecies">Species Analysis</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="sectionActivity" checked>
+                                        <label class="form-check-label" for="sectionActivity">Activity Patterns</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="sectionEnvironment" checked>
+                                        <label class="form-check-label" for="sectionEnvironment">Environmental Data</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="sectionRecommendations" checked>
+                                        <label class="form-check-label" for="sectionRecommendations">Recommendations</label>
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="reportNotes" class="form-label">Additional Notes</label>
+                                    <textarea class="form-control" id="reportNotes" rows="3"></textarea>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary" onclick="generateReport()">Generate Report</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- News Feed Tab -->
+        <div class="tab-content d-none" id="news-feed">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="bi bi-newspaper text-primary me-2"></i> Bat Conservation News</h2>
+                <div>
+                    <button class="btn btn-primary" onclick="refreshNews()">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Refresh
+                    </button>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-rss me-2"></i> Latest Updates
+                        </div>
+                        <div class="card-body" id="newsContainer">
+                            <div class="news-item">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        <img src="https://via.placeholder.com/100" class="rounded" width="100" alt="News Image">
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h5>New Bat Species Discovered in Amazon Rainforest</h5>
+                                        <p class="text-muted"><small>Published 2 days ago | Conservation News</small></p>
+                                        <p>Researchers have identified a previously unknown species of bat in the Amazon rainforest with unique echolocation patterns.</p>
+                                        <a href="#" class="btn btn-sm btn-outline-primary">Read More</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="news-item">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        <img src="https://via.placeholder.com/100" class="rounded" width="100" alt="News Image">
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h5>White-Nose Syndrome Update: New Treatment Shows Promise</h5>
+                                        <p class="text-muted"><small>Published 1 week ago | Disease Research</small></p>
+                                        <p>A new treatment approach for white-nose syndrome has shown promising results in laboratory trials, offering hope for affected bat populations.</p>
+                                        <a href="#" class="btn btn-sm btn-outline-primary">Read More</a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="news-item">
+                                <div class="d-flex">
+                                    <div class="flex-shrink-0">
+                                        <img src="https://via.placeholder.com/100" class="rounded" width="100" alt="News Image">
+                                    </div>
+                                    <div class="flex-grow-1 ms-3">
+                                        <h5>Citizen Science Project Tracks Urban Bat Populations</h5>
+                                        <p class="text-muted"><small>Published 2 weeks ago | Citizen Science</small></p>
+                                        <p>A new citizen science initiative is helping researchers understand how bat populations are adapting to urban environments across Europe.</p>
+                                        <a href="#" class="btn btn-sm btn-outline-primary">Read More</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-footer">
+                            <nav aria-label="News pagination">
+                                <ul class="pagination justify-content-center">
+                                    <li class="page-item disabled">
+                                        <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Previous</a>
+                                    </li>
+                                    <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                    <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                    <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="#">Next</a>
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-bookmark-star me-2"></i> Featured Resources
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group">
+                                <a href="#" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">Bat Conservation Guidelines</h6>
+                                        <small>PDF</small>
+                                    </div>
+                                    <p class="mb-1">Best practices for bat conservation and monitoring</p>
+                                    <small>Bat Conservation Trust</small>
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">Species Identification Guide</h6>
+                                        <small>Interactive</small>
+                                    </div>
+                                    <p class="mb-1">Identify European bat species by their calls</p>
+                                    <small>European Bat Research Association</small>
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">Bat Call Library</h6>
+                                        <small>Database</small>
+                                    </div>
+                                    <p class="mb-1">Comprehensive collection of bat echolocation calls</p>
+                                    <small>Global Bat Bioacoustics</small>
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">Monitoring Equipment Guide</h6>
+                                        <small>Article</small>
+                                    </div>
+                                    <p class="mb-1">Choosing the right equipment for bat surveys</p>
+                                    <small>Wildlife Acoustics</small>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <i class="bi bi-calendar-event me-2"></i> Upcoming Events
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group">
+                                <a href="#" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">International Bat Night</h6>
+                                        <small class="text-muted">Aug 26-27, 2023</small>
+                                    </div>
+                                    <p class="mb-1">Global celebration of bats with events worldwide</p>
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">Bat Monitoring Workshop</h6>
+                                        <small class="text-muted">Sep 15, 2023</small>
+                                    </div>
+                                    <p class="mb-1">Hands-on training for acoustic monitoring techniques</p>
+                                </a>
+                                <a href="#" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">Annual Bat Research Symposium</h6>
+                                        <small class="text-muted">Oct 3-5, 2023</small>
+                                    </div>
+                                    <p class="mb-1">Presentations on the latest bat research findings</p>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Action Button -->
+    <div class="fab" id="fab">
+        <i class="bi bi-lightning-charge" style="font-size: 1.5rem;"></i>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading-spinner d-none" id="loadingSpinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <div class="spinner-text">Processing Bat Data...</div>
+    </div>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0/dist/chartjs-adapter-moment.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/wavesurfer.js@6.6.3/dist/wavesurfer.js"></script>
+
+    <!-- Main Application Script -->
+    <script>
+        // Global variables
+        let currentClientId = "{{ client_id or '1' }}";
+        let currentFolder = "{{ selected_folder or '' }}";
+        let clientsData = JSON.parse('{{ clients|tojson|safe }}');
+        let wavesurfer = null;
+        let map = null;
+        let markers = [];
+
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize UI components
+            initTheme();
+            initCurrentTime();
+            initTabNavigation();
+            initSidebarToggle();
+            initFabButton();
+            
+            // Initialize charts
+            initHealthChart();
+            initSpeciesCharts();
+            initTimelineCharts();
+            
+            // Initialize map if on location tab
+            if (document.getElementById('location-map').classList.contains('active')) {
+                initMap();
+            }
+            
+            // Initialize audio player if audio file exists
+            if (audioFile) {
+                initAudioPlayer(audioFile);
+            }
+            
+            // Set up auto-refresh
+            setInterval(refreshData, 30000); // Refresh every 30 seconds
+            
+            // Load initial client details if available
+            if (currentClientId && currentFolder) {
+                loadClientFolder(currentClientId, currentFolder);
+            }
+        });
+
+        // Initialize theme (dark/light mode)
+        function initTheme() {
+            const themeToggle = document.getElementById('themeToggle');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const storedTheme = localStorage.getItem('theme');
+            
+            // Set initial theme
+            if (storedTheme === 'dark' || (!storedTheme && prefersDark)) {
+                document.documentElement.setAttribute('data-bs-theme', 'dark');
+                themeToggle.innerHTML = '<i class="bi bi-sun"></i>';
+            } else {
+                document.documentElement.setAttribute('data-bs-theme', 'light');
+                themeToggle.innerHTML = '<i class="bi bi-moon"></i>';
+            }
+            
+            // Toggle theme on button click
+            themeToggle.addEventListener('click', () => {
+                if (document.documentElement.getAttribute('data-bs-theme') === 'dark') {
+                    document.documentElement.setAttribute('data-bs-theme', 'light');
+                    localStorage.setItem('theme', 'light');
+                    themeToggle.innerHTML = '<i class="bi bi-moon"></i>';
+                } else {
+                    document.documentElement.setAttribute('data-bs-theme', 'dark');
+                    localStorage.setItem('theme', 'dark');
+                    themeToggle.innerHTML = '<i class="bi bi-sun"></i>';
+                }
+            });
+        }
+
+        // Initialize current time display
+        function initCurrentTime() {
+            function updateTime() {
+                const now = new Date();
+                document.getElementById('currentTime').textContent = now.toLocaleTimeString();
+            }
+            updateTime();
+            setInterval(updateTime, 1000);
+        }
+
+        // Initialize tab navigation
+        function initTabNavigation() {
+            const tabLinks = document.querySelectorAll('.sidebar-menu a[data-tab]');
+            
+            tabLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Remove active class from all tabs and links
+                    document.querySelectorAll('.tab-content').forEach(tab => {
+                        tab.classList.add('d-none');
+                    });
+                    document.querySelectorAll('.sidebar-menu a').forEach(link => {
+                        link.classList.remove('active');
+                    });
+                    
+                    // Add active class to clicked tab and link
+                    const tabId = this.getAttribute('data-tab');
+                    document.getElementById(tabId).classList.remove('d-none');
+                    this.classList.add('active');
+                    
+                    // Initialize specific components when their tab is shown
+                    if (tabId === 'location-map' && !map) {
+                        initMap();
+                    }
+                    
+                    // Close sidebar on mobile
+                    if (window.innerWidth < 992) {
+                        document.getElementById('sidebar').classList.remove('active');
+                    }
+                });
+            });
+        }
+
+        // Initialize sidebar toggle for mobile
+        function initSidebarToggle() {
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebar = document.getElementById('sidebar');
+            
+            sidebarToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+            });
+            
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth < 992 && !sidebar.contains(e.target) && e.target !== sidebarToggle) {
+                    sidebar.classList.remove('active');
+                }
+            });
+        }
+
+        // Initialize floating action button
+        function initFabButton() {
+            const fab = document.getElementById('fab');
+            
+            fab.addEventListener('click', () => {
+                // Show quick actions menu
+                const menu = document.createElement('div');
+                menu.className = 'fab-menu';
+                menu.innerHTML = `
+                    <div class="fab-menu-item" onclick="showNewCallAlert()">
+                        <i class="bi bi-megaphone"></i> New Call Alert
+                    </div>
+                    <div class="fab-menu-item" onclick="showQuickReport()">
+                        <i class="bi bi-file-earmark-text"></i> Quick Report
+                    </div>
+                    <div class="fab-menu-item" onclick="askAI('Summarize recent activity')">
+                        <i class="bi bi-robot"></i> Ask AI
+                    </div>
+                `;
+                
+                document.body.appendChild(menu);
+                
+                // Remove menu when clicking outside
+                setTimeout(() => {
+                    document.addEventListener('click', function handler(e) {
+                        if (!fab.contains(e.target) && !menu.contains(e.target)) {
+                            menu.remove();
+                            document.removeEventListener('click', handler);
+                        }
+                    });
+                }, 10);
+            });
+        }
+
+        // Initialize health chart
+        function initHealthChart() {
+            const ctx = document.getElementById('healthChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['CPU', 'Memory', 'Storage', 'Network', 'API', 'Database'],
+                    datasets: [{
+                        label: 'System Health',
+                        data: [85, 72, 65, 90, 95, 88],
+                        backgroundColor: 'rgba(44, 124, 68, 0.2)',
+                        borderColor: 'rgba(44, 124, 68, 1)',
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.raw}%`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + '%';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize species charts
+        function initSpeciesCharts() {
+            // Pie chart
+            const pieCtx = document.getElementById('speciesPieChart').getContext('2d');
+            new Chart(pieCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Pipistrellus pipistrellus', 'Myotis daubentonii', 'Nyctalus noctula', 'Plecotus auritus', 'Other'],
+                    datasets: [{
+                        data: [45, 25, 15, 10, 5],
+                        backgroundColor: [
+                            'rgba(44, 124, 68, 0.8)',
+                            'rgba(92, 184, 92, 0.8)',
+                            'rgba(74, 157, 72, 0.8)',
+                            'rgba(26, 46, 34, 0.8)',
+                            'rgba(150, 150, 150, 0.8)'
+                        ],
+                        borderColor: '#fff',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'right'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${value} (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Bar chart
+            const barCtx = document.getElementById('speciesBarChart').getContext('2d');
+            new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                    datasets: [
+                        {
+                            label: 'Pipistrellus pipistrellus',
+                            data: [12, 19, 15, 22, 30, 45, 38],
+                            backgroundColor: 'rgba(44, 124, 68, 0.8)'
+                        },
+                        {
+                            label: 'Myotis daubentonii',
+                            data: [8, 12, 10, 15, 18, 25, 22],
+                            backgroundColor: 'rgba(92, 184, 92, 0.8)'
+                        },
+                        {
+                            label: 'Nyctalus noctula',
+                            data: [5, 8, 6, 10, 12, 15, 18],
+                            backgroundColor: 'rgba(74, 157, 72, 0.8)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            stacked: true
+                        },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Initialize timeline charts
+        function initTimelineCharts() {
+            // Main timeline chart
+            const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+            new Chart(timelineCtx, {
+                type: 'line',
+                data: {
+                    datasets: [
+                        {
+                            label: 'Bat Calls',
+                            data: generateTimelineData(30),
+                            borderColor: 'rgba(44, 124, 68, 1)',
+                            backgroundColor: 'rgba(44, 124, 68, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'day'
+                            }
+                        },
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Number of Calls'
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    return moment(context[0].parsed.x).format('MMM D, YYYY');
+                                },
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${context.parsed.y}`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Daily patterns chart
+            const dailyCtx = document.getElementById('dailyPatternChart').getContext('2d');
+            new Chart(dailyCtx, {
+                type: 'line',
+                data: {
+                    labels: ['18:00', '20:00', '22:00', '00:00', '02:00', '04:00', '06:00'],
+                    datasets: [
+                        {
+                            label: 'Average Calls per Hour',
+                            data: [5, 18, 32, 45, 38, 22, 8],
+                            borderColor: 'rgba(44, 124, 68, 1)',
+                            backgroundColor: 'rgba(44, 124, 68, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // Nightly activity chart
+            const nightlyCtx = document.getElementById('nightlyActivityChart').getContext('2d');
+            new Chart(nightlyCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [
+                        {
+                            label: 'Nightly Activity',
+                            data: [45, 38, 52, 47, 60, 72, 55],
+                            backgroundColor: 'rgba(44, 124, 68, 0.8)'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Generate random timeline data
+        function generateTimelineData(days) {
+            const data = [];
+            const now = moment();
+            
+            for (let i = days; i >= 0; i--) {
+                const date = now.clone().subtract(i, 'days');
+                data.push({
+                    x: date.toDate(),
+                    y: Math.floor(Math.random() * 50) + 10
+                });
+            }
+            
+            return data;
+        }
+
+        // Initialize Google Map
+        function initMap() {
+            // Check if map container exists
+            if (!document.getElementById('map')) return;
+            
+                        // Create map centered on server location
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 51.5074, lng: -0.1278 }, // Default to London
+                zoom: 10,
+                styles: [
+                    {
+                        "featureType": "all",
+                        "elementType": "labels.text.fill",
+                        "stylers": [
+                            {
+                                "color": "#ffffff"
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "all",
+                        "elementType": "labels.text.stroke",
+                        "stylers": [
+                            {
+                                "color": "#000000"
+                            },
+                            {
+                                "lightness": 13
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "administrative",
+                        "elementType": "geometry.fill",
+                        "stylers": [
+                            {
+                                "color": "#000000"
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "administrative",
+                        "elementType": "geometry.stroke",
+                        "stylers": [
+                            {
+                                "color": "#144b53"
+                            },
+                            {
+                                "lightness": 14
+                            },
+                            {
+                                "weight": 1.4
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "landscape",
+                        "elementType": "all",
+                        "stylers": [
+                            {
+                                "color": "#1a2e22"
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "poi",
+                        "elementType": "geometry",
+                        "stylers": [
+                            {
+                                "color": "#0c4152"
+                            },
+                            {
+                                "lightness": 5
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "road.highway",
+                        "elementType": "geometry.fill",
+                        "stylers": [
+                            {
+                                "color": "#000000"
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "road.highway",
+                        "elementType": "geometry.stroke",
+                        "stylers": [
+                            {
+                                "color": "#0b434f"
+                            },
+                            {
+                                "lightness": 25
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "road.arterial",
+                        "elementType": "geometry.fill",
+                        "stylers": [
+                            {
+                                "color": "#000000"
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "road.arterial",
+                        "elementType": "geometry.stroke",
+                        "stylers": [
+                            {
+                                "color": "#0b3d51"
+                            },
+                            {
+                                "lightness": 16
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "road.local",
+                        "elementType": "geometry",
+                        "stylers": [
+                            {
+                                "color": "#000000"
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "transit",
+                        "elementType": "all",
+                        "stylers": [
+                            {
+                                "color": "#146474"
+                            }
+                        ]
+                    },
+                    {
+                        "featureType": "water",
+                        "elementType": "all",
+                        "stylers": [
+                            {
+                                "color": "#021019"
+                            }
+                        ]
+                    }
+                ]
+            });
+
+            // Add markers for server and clients
+            addLocationMarker('Server', 'https://maps.app.goo.gl/qaf63YB1qyb5Wsxf7', 'server');
+            addLocationMarker('Client 1', 'https://maps.app.goo.gl/A7jWTvcdUx5p54kr8', 'client1');
+            addLocationMarker('Client 2', 'https://maps.app.goo.gl/EspJK4LoNXihFpRRA', 'client2');
+
+            // Draw connection lines
+            drawConnectionLines();
+        }
+
+        // Add location marker to map
+        function addLocationMarker(name, url, type) {
+            // Extract coordinates from URL (simplified - in real app you'd use the actual coordinates)
+            const coords = {
+                'server': { lat: 51.5074, lng: -0.1278 },
+                'client1': { lat: 51.5115, lng: -0.1160 },
+                'client2': { lat: 51.5033, lng: -0.1195 }
+            };
+
+            const marker = new google.maps.Marker({
+                position: coords[type],
+                map: map,
+                title: name,
+                icon: {
+                    url: type === 'server' 
+                        ? 'https://maps.google.com/mapfiles/ms/icons/red-dot.png'
+                        : 'https://maps.google.com/mapfiles/ms/icons/green-dot.png',
+                    scaledSize: new google.maps.Size(32, 32)
+                }
+            });
+
+            // Add info window
+            const infoWindow = new google.maps.InfoWindow({
+                content: `
+                    <div class="map-info-window">
+                        <h6>${name}</h6>
+                        <p><strong>Status:</strong> <span class="text-success">Online</span></p>
+                        <p><strong>Last Update:</strong> ${new Date().toLocaleString()}</p>
+                        <p><strong>Calls Today:</strong> ${Math.floor(Math.random() * 20) + 5}</p>
+                        <a href="${url}" target="_blank" class="btn btn-sm btn-primary mt-1">
+                            <i class="bi bi-geo-alt"></i> View Location
+                        </a>
+                    </div>
+                `
+            });
+
+            marker.addListener('click', () => {
+                infoWindow.open(map, marker);
+            });
+
+            markers.push(marker);
+        }
+
+        // Draw connection lines between server and clients
+        function drawConnectionLines() {
+            const serverPos = markers.find(m => m.title === 'Server').getPosition();
+            
+            markers.filter(m => m.title.startsWith('Client')).forEach(clientMarker => {
+                const clientPos = clientMarker.getPosition();
+                
+                new google.maps.Polyline({
+                    path: [serverPos, clientPos],
+                    geodesic: true,
+                    strokeColor: '#2c7c44',
+                    strokeOpacity: 0.6,
+                    strokeWeight: 2,
+                    map: map
+                });
+            });
+        }
+
+        // Initialize audio player
+        function initAudioPlayer(audioFile) {
+            wavesurfer = WaveSurfer.create({
+                container: '#audioPlayer',
+                waveColor: '#2c7c44',
+                progressColor: '#4a9d48',
+                cursorColor: '#1a2e22',
+                barWidth: 2,
+                barRadius: 3,
+                cursorWidth: 1,
+                height: 100,
+                barGap: 2,
+                responsive: true
+            });
+
+            wavesurfer.load(audioFile);
+            
+            // Add play/pause button
+            const playButton = document.createElement('button');
+            playButton.className = 'btn btn-sm btn-primary me-2';
+            playButton.innerHTML = '<i class="bi bi-play"></i>';
+            document.querySelector('.audio-player').prepend(playButton);
+            
+            playButton.addEventListener('click', () => {
+                wavesurfer.playPause();
+                playButton.innerHTML = wavesurfer.isPlaying() 
+                    ? '<i class="bi bi-pause"></i>' 
+                    : '<i class="bi bi-play"></i>';
+            });
+            
+            // Add time display
+            const timeDisplay = document.createElement('span');
+            timeDisplay.className = 'badge bg-secondary ms-2';
+            document.querySelector('.audio-player').appendChild(timeDisplay);
+            
+            wavesurfer.on('audioprocess', () => {
+                const duration = wavesurfer.getDuration();
+                const currentTime = wavesurfer.getCurrentTime();
+                timeDisplay.textContent = `${currentTime.toFixed(2)}s / ${duration.toFixed(2)}s`;
+            });
+        }
+
+        // Refresh data from server
+        function refreshData() {
+            document.getElementById('lastUpdated').textContent = new Date().toLocaleString();
+            
+            axios.get('/api/folders')
+                .then(response => {
+                    clientsData = response.data.clients;
+                    updateClientTree(response.data.clients);
+                })
+                .catch(error => {
+                    console.error('Error refreshing data:', error);
+                });
+        }
+
+        // Refresh clients data specifically
+        function refreshClients() {
+            showLoading();
+            refreshData();
+            setTimeout(hideLoading, 1000);
+        }
+
+        // Refresh map data
+        function refreshMap() {
+            showLoading();
+            if (map) {
+                markers.forEach(marker => marker.setMap(null));
+                markers = [];
+                initMap();
+            }
+            setTimeout(hideLoading, 1000);
+        }
+
+        // Refresh news feed
+        function refreshNews() {
+            showLoading();
+            // Simulate news loading
+            setTimeout(() => {
+                hideLoading();
+                showAlert('News feed updated', 'success');
+            }, 1500);
+        }
+
+        // Update client tree with new data
+        function updateClientTree(clients) {
+            const clientTree = document.getElementById('clientTree');
+            
+            // Clear existing client items (keep server)
+            const serverItem = clientTree.querySelector('li:first-child');
+            clientTree.innerHTML = '';
+            clientTree.appendChild(serverItem);
+            
+            // Add updated client items
+            for (const [clientId, client] of Object.entries(clients)) {
+                const clientItem = document.createElement('li');
+                clientItem.innerHTML = `
+                    <a href="#" onclick="toggleFolder('client${clientId}')">
+                        <i class="bi bi-pc-display-horizontal me-2"></i> Client ${clientId}
+                        <span class="badge bg-success ms-auto">Online</span>
+                    </a>
+                    <ul class="folder-items" id="client${clientId}Items">
+                        ${client.folders.map(folder => `
+                            <li>
+                                <a href="#" onclick="loadClientFolder('${clientId}', '${folder}')">
+                                    <i class="bi bi-folder me-2"></i> ${folder}
+                                </a>
+                            </li>
+                        `).join('')}
+                    </ul>
+                `;
+                clientTree.appendChild(clientItem);
+            }
+        }
+
+        // Toggle folder display in client tree
+        function toggleFolder(clientId) {
+            const folderItems = document.getElementById(clientId + 'Items');
+            folderItems.classList.toggle('show');
+        }
+
+        // Load client folder details
+        function loadClientFolder(clientId, folderName) {
+            showLoading();
+            
+            axios.get(`/api/client/${clientId}`)
+                .then(response => {
+                    const folderData = response.data.data.folders.find(f => f.name === folderName);
+                    displayClientDetails(clientId, folderData);
+                    currentClientId = clientId;
+                    currentFolder = folderName;
+                    hideLoading();
+                })
+                .catch(error => {
+                    console.error('Error loading client folder:', error);
+                    hideLoading();
+                    showAlert('Failed to load client data', 'danger');
+                });
+        }
+
+        // Display client details
+        function displayClientDetails(clientId, folderData) {
+            const detailsContainer = document.getElementById('clientDetails');
+            
+            detailsContainer.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h4>Client ${clientId} - ${folderData.name}</h4>
+                        <p class="text-muted">Last updated: ${new Date().toLocaleString()}</p>
+                        
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <i class="bi bi-thermometer-half me-2"></i> Sensor Data
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Temperature
+                                        <span class="badge bg-primary">
+                                            ${folderData.sensor_data.temperature_C}°C
+                                        </span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Humidity
+                                        <span class="badge bg-primary">
+                                            ${folderData.sensor_data['humidity_%']}%
+                                        </span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Light
+                                        <span class="badge bg-primary">
+                                            ${folderData.sensor_data.light_lux} lux
+                                        </span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Pressure
+                                        <span class="badge bg-primary">
+                                            ${folderData.sensor_data.pressure_hPa} hPa
+                                        </span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        GPS Status
+                                        <span class="badge ${folderData.sensor_data.gps_status === 'linked' ? 'bg-success' : 'bg-danger'}">
+                                            ${folderData.sensor_data.gps_status.toUpperCase()}
+                                        </span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <i class="bi bi-graph-up me-2"></i> Call Analysis
+                            </div>
+                            <div class="card-body">
+                                ${folderData.has_spectogram ? `
+                                    <img src="static/temp/${folderData.name}/Spectogram.jpg" class="img-fluid rounded mb-3" alt="Spectogram">
+                                ` : `
+                                    <div class="alert alert-warning">No spectogram available</div>
+                                `}
+                                
+                                ${folderData.has_audio ? `
+                                    <audio controls class="w-100">
+                                        <source src="static/temp/${folderData.name}/Audio.wav" type="audio/wav">
+                                        Your browser does not support the audio element.
+                                    </audio>
+                                ` : `
+                                    <div class="alert alert-warning">No audio recording available</div>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-end">
+                            <button class="btn btn-primary me-2" onclick="generateClientReport('${clientId}', '${folderData.name}')">
+                                <i class="bi bi-file-earmark-text me-1"></i> Generate Report
+                            </button>
+                            <button class="btn btn-outline-secondary">
+                                <i class="bi bi-download me-1"></i> Export Data
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Show client details
+        function showClientDetails(clientId) {
+            const detailsContainer = document.getElementById('clientDetails');
+            
+            if (clientId === 'server') {
+                detailsContainer.innerHTML = `
+                    <div class="text-center">
+                        <i class="bi bi-server" style="font-size: 3rem;"></i>
+                        <h4 class="mt-3">Server Status</h4>
+                        <p class="text-muted">Central data processing and storage</p>
+                        
+                        <div class="card mt-4">
+                            <div class="card-header">
+                                <i class="bi bi-activity me-2"></i> System Metrics
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        CPU Usage
+                                        <div class="progress w-50">
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: 45%"></div>
+                                        </div>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Memory Usage
+                                        <div class="progress w-50">
+                                            <div class="progress-bar bg-warning" role="progressbar" style="width: 65%"></div>
+                                        </div>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Storage
+                                        <div class="progress w-50">
+                                            <div class="progress-bar bg-info" role="progressbar" style="width: 35%"></div>
+                                        </div>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        Active Clients
+                                        <span class="badge bg-primary">${Object.keys(clientsData).length}</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                detailsContainer.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-pc-display-horizontal" style="font-size: 3rem;"></i>
+                        <h4 class="mt-3">Client ${clientId}</h4>
+                        <p class="text-muted">Select a folder to view call details</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Toggle alert conditions based on type
+        function toggleAlertConditions() {
+            const alertType = document.getElementById('alertType').value;
+            
+            // Hide all condition sections
+            document.getElementById('speciesCondition').style.display = 'none';
+            document.getElementById('activityCondition').style.display = 'none';
+            document.getElementById('systemCondition').style.display = 'none';
+            document.getElementById('environmentCondition').style.display = 'none';
+            
+            // Show relevant condition section
+            if (alertType === 'species') {
+                document.getElementById('speciesCondition').style.display = 'block';
+            } else if (alertType === 'activity') {
+                document.getElementById('activityCondition').style.display = 'block';
+            } else if (alertType === 'system') {
+                document.getElementById('systemCondition').style.display = 'block';
+            } else if (alertType === 'environment') {
+                document.getElementById('environmentCondition').style.display = 'block';
+            }
+        }
+
+        // Save new alert
+        function saveAlert() {
+            const alertName = document.getElementById('alertName').value;
+            const alertType = document.getElementById('alertType').value;
+            
+            if (!alertName || !alertType) {
+                showAlert('Please fill all required fields', 'danger');
+                return;
+            }
+            
+            showLoading();
+            
+            // Simulate saving to server
+            setTimeout(() => {
+                hideLoading();
+                document.getElementById('alertForm').reset();
+                bootstrap.Modal.getInstance(document.getElementById('newAlertModal')).hide();
+                showAlert('Alert saved successfully', 'success');
+            }, 1500);
+        }
+
+        // Generate client report
+        function generateClientReport(clientId, folderName) {
+            showLoading();
+            
+            // Simulate report generation
+            setTimeout(() => {
+                hideLoading();
+                showAlert(`Report generated for Client ${clientId} - ${folderName}`, 'success');
+            }, 2000);
+        }
+
+        // Load report template
+        function loadReportTemplate(template) {
+            const preview = document.getElementById('reportPreview');
+            const generateBtn = document.getElementById('generateReportBtn');
+            const exportBtn = document.getElementById('exportReportBtn');
+            
+            generateBtn.disabled = false;
+            exportBtn.disabled = false;
+            
+            // Simulate loading different templates
+            if (template === 'daily') {
+                preview.innerHTML = `
+                    <h4>Daily Summary Report</h4>
+                    <p class="text-muted">${new Date().toLocaleDateString()}</p>
+                    <hr>
+                    <h5>Activity Overview</h5>
+                    <canvas id="reportChart1" height="200"></canvas>
+                    <h5 class="mt-4">Species Detected</h5>
+                    <canvas id="reportChart2" height="200"></canvas>
+                    <h5 class="mt-4">Environmental Conditions</h5>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Average</th>
+                                <th>Min</th>
+                                <th>Max</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Temperature</td>
+                                <td>18.5°C</td>
+                                <td>15.2°C</td>
+                                <td>22.1°C</td>
+                            </tr>
+                            <tr>
+                                <td>Humidity</td>
+                                <td>65%</td>
+                                <td>52%</td>
+                                <td>78%</td>
+                            </tr>
+                            <tr>
+                                <td>Light</td>
+                                <td>45 lux</td>
+                                <td>8 lux</td>
+                                <td>120 lux</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                `;
+            } else if (template === 'weekly') {
+                preview.innerHTML = `
+                    <h4>Weekly Analysis Report</h4>
+                    <p class="text-muted">${new Date(new Date().setDate(new Date().getDate() - 7)).toLocaleDateString()} to ${new Date().toLocaleDateString()}</p>
+                    <hr>
+                    <h5>Activity Trends</h5>
+                    <canvas id="reportChart1" height="200"></canvas>
+                    <h5 class="mt-4">Species Distribution</h5>
+                    <canvas id="reportChart2" height="200"></canvas>
+                    <h5 class="mt-4">Key Observations</h5>
+                    <ul>
+                        <li>Increased activity on Wednesday night (32% above average)</li>
+                        <li>First detection of Plecotus auritus this season</li>
+                        <li>Unusual temperature fluctuation correlated with activity</li>
+                    </ul>
+                `;
+            } else if (template === 'species') {
+                preview.innerHTML = `
+                    <h4>Species Report: Pipistrellus pipistrellus</h4>
+                    <p class="text-muted">Last 30 days</p>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <img src="static/bat_species/Pipistrellus_pipistrellus.jpg" class="img-fluid rounded">
+                        </div>
+                        <div class="col-md-8">
+                            <h5>Detection Patterns</h5>
+                            <canvas id="reportChart1" height="200"></canvas>
+                        </div>
+                    </div>
+                    <h5 class="mt-4">Activity Characteristics</h5>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Peak Activity Time</td>
+                                <td>23:00 - 01:00</td>
+                            </tr>
+                            <tr>
+                                <td>Average Calls/Night</td>
+                                <td>18.7</td>
+                            </tr>
+                            <tr>
+                                <td>Dominant Frequency</td>
+                                <td>45 kHz</td>
+                            </tr>
+                            <tr>
+                                <td>Call Duration</td>
+                                <td>3.2 ms</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                `;
+            } else if (template === 'client') {
+                preview.innerHTML = `
+                    <h4>Client Performance Report</h4>
+                    <p class="text-muted">Last 7 days</p>
+                    <hr>
+                    <h5>Data Collection Metrics</h5>
+                    <canvas id="reportChart1" height="200"></canvas>
+                    <h5 class="mt-4">System Status</h5>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Value</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Battery Level</td>
+                                <td>78%</td>
+                                <td><span class="badge bg-success">Good</span></td>
+                            </tr>
+                            <tr>
+                                <td>Storage Used</td>
+                                <td>45%</td>
+                                <td><span class="badge bg-warning">Moderate</span></td>
+                            </tr>
+                            <tr>
+                                <td>Connection Stability</td>
+                                <td>98.7%</td>
+                                <td><span class="badge bg-success">Excellent</span></td>
+                            </tr>
+                            <tr>
+                                <td>Data Quality</td>
+                                <td>92%</td>
+                                <td><span class="badge bg-success">Good</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                `;
+            } else { // custom
+                preview.innerHTML = `
+                    <h4>Custom Report Configuration</h4>
+                    <p class="text-muted">Select parameters to include</p>
+                    <hr>
+                    <form>
+                        <div class="mb-3">
+                            <label class="form-label">Report Title</label>
+                            <input type="text" class="form-control">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Time Range</label>
+                            <select class="form-select">
+                                <option>Last 24 hours</option>
+                                <option>Last 7 days</option>
+                                <option>Last 30 days</option>
+                                <option>Custom range</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Include Sections</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" checked>
+                                <label class="form-check-label">Activity Summary</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" checked>
+                                <label class="form-check-label">Species Analysis</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox">
+                                <label class="form-check-label">Environmental Data</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" checked>
+                                <label class="form-check-label">System Performance</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Format</label>
+                            <select class="form-select">
+                                <option>PDF</option>
+                                <option>Excel</option>
+                                <option>Both</option>
+                            </select>
+                        </div>
+                    </form>
+                `;
+            }
+            
+            // Initialize charts in report
+            setTimeout(() => {
+                initReportCharts();
+            }, 100);
+        }
+
+        // Initialize charts in report preview
+        function initReportCharts() {
+            const ctx1 = document.getElementById('reportChart1')?.getContext('2d');
+            const ctx2 = document.getElementById('reportChart2')?.getContext('2d');
+            
+            if (ctx1) {
+                new Chart(ctx1, {
+                    type: 'line',
+                    data: {
+                        labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
+                        datasets: [{
+                            label: 'Bat Calls',
+                            data: [12, 19, 15, 22, 18, 25, 30],
+                            borderColor: '#2c7c44',
+                            backgroundColor: 'rgba(44, 124, 68, 0.1)',
+                            fill: true
+                        }]
+                    }
+                });
+            }
+            
+            if (ctx2) {
+                new Chart(ctx2, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Pipistrellus', 'Myotis', 'Nyctalus', 'Plecotus', 'Other'],
+                        datasets: [{
+                            label: 'Species Count',
+                            data: [45, 25, 15, 10, 5],
+                            backgroundColor: [
+                                'rgba(44, 124, 68, 0.8)',
+                                'rgba(92, 184, 92, 0.8)',
+                                'rgba(74, 157, 72, 0.8)',
+                                'rgba(26, 46, 34, 0.8)',
+                                'rgba(150, 150, 150, 0.8)'
+                            ]
+                        }]
+                    }
+                });
+            }
+        }
+
+        // Generate report from modal
+        function generateReport() {
+            const title = document.getElementById('reportTitle').value;
+            const type = document.getElementById('reportType').value;
+            
+            if (!title || !type) {
+                showAlert('Please fill all required fields', 'danger');
+                return;
+            }
+            
+            showLoading();
+            
+            // Simulate report generation
+            setTimeout(() => {
+                hideLoading();
+                bootstrap.Modal.getInstance(document.getElementById('newReportModal')).hide();
+                showAlert(`"${title}" report generated successfully`, 'success');
+            }, 2000);
+        }
+
+        // Ask AI assistant a question
+        function askAI(question) {
+            if (!question) {
+                question = document.getElementById('aiQuestion').value;
+                if (!question) return;
+            }
+            
+            const chatMessages = document.getElementById('chatMessages');
+            
+            // Add user message
+            const userMessage = document.createElement('div');
+            userMessage.className = 'message user-message';
+            userMessage.textContent = question;
+            chatMessages.appendChild(userMessage);
+            
+            // Clear input
+            if (document.getElementById('aiQuestion')) {
+                document.getElementById('aiQuestion').value = '';
+            }
+            
+            // Show typing indicator
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'message bot-message';
+            typingIndicator.innerHTML = '<i class="bi bi-three-dots"></i>';
+            chatMessages.appendChild(typingIndicator);
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Simulate AI response after delay
+            setTimeout(() => {
+                // Remove typing indicator
+                chatMessages.removeChild(typingIndicator);
+                
+                // Add AI response
+                const botMessage = document.createElement('div');
+                botMessage.className = 'message bot-message';
+                
+                // Generate different responses based on question
+                if (question.toLowerCase().includes('species')) {
+                    botMessage.innerHTML = `
+                        Based on recent data, the most frequently detected species is <strong>Pipistrellus pipistrellus</strong> (Common Pipistrelle), 
+                        accounting for approximately 45% of all detections. Other species detected include:
+                        <ul class="mt-2">
+                            <li>Myotis daubentonii (25%)</li>
+                            <li>Nyctalus noctula (15%)</li>
+                            <li>Plecotus auritus (10%)</li>
+                        </ul>
+                        <p class="mt-2">Would you like me to generate a detailed species report?</p>
+                        <button class="btn btn-sm btn-primary mt-1" onclick="askAI('Generate species report')">
+                            <i class="bi bi-file-earmark-text"></i> Generate Report
+                        </button>
+                    `;
+                } else if (question.toLowerCase().includes('pattern')) {
+                    botMessage.innerHTML = `
+                        <p>I've analyzed the activity patterns and found some interesting trends:</p>
+                        <ul>
+                            <li>Peak activity occurs between 23:00 and 01:00 local time</li>
+                            <li>Wednesday nights show 32% higher activity than average</li>
+                            <li>Activity correlates with temperature (r=0.72)</li>
+                        </ul>
+                        <p>Here's a visualization of the patterns:</p>
+                        <canvas id="aiChart" height="150"></canvas>
+                    `;
+                } else {
+                    botMessage.innerHTML = `
+                        I've analyzed your bat monitoring data and here's what I found:
+                        <ul class="mt-2">
+                            <li>Total calls detected: 142 in the last 24 hours</li>
+                            <li>Most active client: Client 1 (78 calls)</li>
+                            <li>Environmental conditions: Average temp 18.5°C, humidity 65%</li>
+                            <li>System status: All clients online, no issues detected</li>
+                        </ul>
+                        <p class="mt-2">How can I help you further with this data?</p>
+                    `;
+                }
+                
+                chatMessages.appendChild(botMessage);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // Initialize chart if needed
+                if (question.toLowerCase().includes('pattern')) {
+                    setTimeout(() => {
+                        const ctx = document.getElementById('aiChart').getContext('2d');
+                        new Chart(ctx, {
+                            type: 'line',
+                            data: {
+                                labels: ['18:00', '20:00', '22:00', '00:00', '02:00', '04:00', '06:00'],
+                                datasets: [{
+                                    label: 'Call Activity',
+                                    data: [5, 18, 32, 45, 38, 22, 8],
+                                    borderColor: '#2c7c44',
+                                    backgroundColor: 'rgba(44, 124, 68, 0.1)',
+                                    fill: true
+                                }]
+                            },
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    legend: {
+                                        display: false
+                                    }
+                                }
+                            }
+                        });
+                    }, 100);
+                }
+            }, 1500);
+        }
+
+        // Show new call alert
+        function showNewCallAlert() {
+            showAlert('New bat call detected from Client 1 - Pipistrellus pipistrellus (92% confidence)', 'success');
+        }
+
+        // Show quick report
+        function showQuickReport() {
+            const modal = new bootstrap.Modal(document.getElementById('newReportModal'));
+            document.getElementById('reportTitle').value = 'Quick Activity Report';
+            document.getElementById('reportType').value = 'summary';
+            modal.show();
+        }
+
+        // Show species tab
+        function showSpeciesTab() {
+            document.querySelector('.sidebar-menu a[data-tab="species-analysis"]').click();
+        }
+
+        // Show loading spinner
+        function showLoading() {
+            document.getElementById('loadingSpinner').classList.remove('d-none');
+        }
+
+        // Hide loading spinner
+        function hideLoading() {
+            document.getElementById('loadingSpinner').classList.add('d-none');
+        }
+
+        // Show alert message
+        function showAlert(message, type) {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.style.position = 'fixed';
+            alert.style.bottom = '20px';
+            alert.style.right = '20px';
+            alert.style.zIndex = '1100';
+            alert.style.maxWidth = '400px';
+            alert.role = 'alert';
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            document.body.appendChild(alert);
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                alert.classList.add('fade');
+                setTimeout(() => {
+                    alert.remove();
+                }, 150);
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
