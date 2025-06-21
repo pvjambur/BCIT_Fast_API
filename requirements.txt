@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+pydrive2
+google-api-python-client
+pillow
+torch
+torchvision
+efficientnet-pytorch
+ollama
+python-multipart
+jinja2
+reportlab
+python-dotenv
