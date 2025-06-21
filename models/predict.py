@@ -5,11 +5,11 @@ from torchvision import transforms
 from efficientnet_pytorch import EfficientNet
 
 # Config
-PROJECT_ROOT = "C:\\Users\\jambu\\13th_June_Bat"
-MODEL_PATH_10 = os.path.join(PROJECT_ROOT, "models", "efficientnet_b0_bat.pth")
-MODEL_PATH_31 = os.path.join(PROJECT_ROOT, "models", "efficientnet_b0_bat_31_modifiedspecies.pth")
-CLASSES_PATH_10 = os.path.join(PROJECT_ROOT, "models", "classes.json")
-CLASSES_PATH_31 = os.path.join(PROJECT_ROOT, "models", "new_classes_31.json")
+PROJECT_ROOT = "models"
+MODEL_PATH_10 = os.path.join(PROJECT_ROOT,"efficientnet_b0_bat.pth")
+MODEL_PATH_31 = os.path.join(PROJECT_ROOT,"efficientnet_b0_bat_31_modifiedspecies.pth")
+CLASSES_PATH_10 = os.path.join(PROJECT_ROOT,"classes.json")
+CLASSES_PATH_31 = os.path.join(PROJECT_ROOT,"new_classes_31.json")
 
 # Device & transforms
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
