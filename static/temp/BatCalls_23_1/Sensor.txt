@@ -1,0 +1,5 @@
+Client1 Temp: 27.74C
+Humidity: 60.67%
+Light: 18.75 lux
+Pressure: 919.40 hPa
+GPS: https://maps.google.com/?q=12.924261,77.501394

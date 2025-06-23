@@ -1,0 +1,5 @@
+Client2 Temp: 29.17C
+Humidity: 52.84%
+Light: 99.17 lux
+Pressure: 915.61 hPa
+GPS not linked yet

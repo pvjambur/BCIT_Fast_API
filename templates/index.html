@@ -211,7 +211,7 @@
         }
         
         /* Species Styles */
-        .species-image {
+        .Species-image {
             max-height: 250px;
             object-fit: contain;
             border-radius: 8px;
@@ -458,16 +458,16 @@
         }
         
         /* Species Gallery */
-        .species-card {
+        .Species-card {
             cursor: pointer;
             transition: all 0.2s;
         }
         
-        .species-card:hover {
+        .Species-card:hover {
             transform: translateY(-5px);
         }
         
-        .species-card img {
+        .Species-card img {
             height: 180px;
             object-fit: cover;
             border-radius: 8px 8px 0 0;
@@ -563,7 +563,7 @@
                 </a>
             </li>
             <li>
-                <a href="#" data-tab="species-analysis">
+                <a href="#" data-tab="Species-analysis">
                     <i class="bi bi-binoculars"></i>
                     <span>Species Analysis</span>
                 </a>
@@ -674,7 +674,7 @@
                             <div class="d-flex justify-content-between align-items-center">
                                 <div>
                                     <h6 class="card-title">Species Detected</h6>
-                                    <h3 class="mb-0" id="speciesCount">0</h3>
+                                    <h3 class="mb-0" id="SpeciesCount">0</h3>
                                 </div>
                                 <i class="bi bi-binoculars" style="font-size: 2rem;"></i>
                             </div>
@@ -906,9 +906,9 @@
                                 <div class="text-center mb-3">
                                     <img src="{{ spectogram_image }}" class="img-fluid rounded" alt="Spectogram">
                                 </div>
-                                {% if species_prediction %}
+                                {% if Species_prediction %}
                                     <div class="alert alert-success">
-                                        <strong>Predicted Species:</strong> {{ species_prediction }}
+                                        <strong>Predicted Species:</strong> {{ Species_prediction }}
                                         {% if confidence %}
                                             <div class="mt-1">
                                                 <small>Confidence: {{ confidence }}%</small>
@@ -933,9 +933,9 @@
                             <i class="bi bi-binoculars me-2"></i> Species Identification
                         </div>
                         <div class="card-body text-center">
-                            {% if species_image %}
-                                <img src="{{ species_image }}" class="species-image" alt="Bat Species">
-                                <h5 class="mt-3">{{ species_prediction }}</h5>
+                            {% if Species_image %}
+                                <img src="{{ Species_image }}" class="Species-image" alt="Bat Species">
+                                <h5 class="mt-3">{{ Species_prediction }}</h5>
                                 <div class="mt-3">
                                     <button class="btn btn-primary" onclick="showSpeciesTab()">
                                         <i class="bi bi-search me-1"></i> View All Species
@@ -944,7 +944,7 @@
                             {% else %}
                                 <div class="text-center py-4 text-muted">
                                     <i class="bi bi-question-circle" style="font-size: 2rem;"></i>
-                                    <p class="mt-2">No species identified</p>
+                                    <p class="mt-2">No Species identified</p>
                                 </div>
                             {% endif %}
                         </div>
@@ -1025,12 +1025,12 @@
         </div>
         
         <!-- Species Analysis Tab -->
-        <div class="tab-content d-none" id="species-analysis">
+        <div class="tab-content d-none" id="Species-analysis">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="mb-0"><i class="bi bi-binoculars text-primary me-2"></i> Species Analysis</h2>
                 <div>
                     <div class="input-group" style="width: 300px;">
-                        <input type="text" class="form-control" placeholder="Search species..." id="speciesSearch">
+                        <input type="text" class="form-control" placeholder="Search Species..." id="SpeciesSearch">
                         <button class="btn btn-primary" type="button">
                             <i class="bi bi-search"></i>
                         </button>
@@ -1047,10 +1047,10 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-6">
-                                    <canvas id="speciesPieChart" height="300"></canvas>
+                                    <canvas id="SpeciesPieChart" height="300"></canvas>
                                 </div>
                                 <div class="col-md-6">
-                                    <canvas id="speciesBarChart" height="300"></canvas>
+                                    <canvas id="SpeciesBarChart" height="300"></canvas>
                                 </div>
                             </div>
                         </div>
@@ -1065,10 +1065,10 @@
                             <i class="bi bi-collection me-2"></i> Recordings by Species
                         </div>
                         <div class="card-body">
-                            <ul class="nav nav-tabs" id="speciesTabs" role="tablist">
+                            <ul class="nav nav-tabs" id="SpeciesTabs" role="tablist">
                                 <!-- Species tabs will be generated here -->
                             </ul>
-                            <div class="tab-content pt-3" id="speciesTabContent">
+                            <div class="tab-content pt-3" id="SpeciesTabContent">
                                 <!-- Species content will be generated here -->
                             </div>
                         </div>
@@ -1221,7 +1221,7 @@
                         </div>
                         <div class="card-body">
                             <div class="d-grid gap-2">
-                                <button class="btn btn-outline-primary text-start" onclick="askAI('What species did we detect most frequently?')">
+                                <button class="btn btn-outline-primary text-start" onclick="askAI('What Species did we detect most frequently?')">
                                     <i class="bi bi-question-circle me-2"></i> Frequent Species
                                 </button>
                                 <button class="btn btn-outline-primary text-start" onclick="askAI('Show me unusual Bat activity patterns.')">
@@ -1249,7 +1249,7 @@
                                 </li>
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     Current Species
-                                    <span class="badge bg-success">{{ species_prediction or 'Unknown' }}</span>
+                                    <span class="badge bg-success">{{ Species_prediction or 'Unknown' }}</span>
                                 </li>
                                 <li class="list-group-item d-flex justify-content-between align-items-center">
                                     Confidence
@@ -1312,7 +1312,7 @@
                             <div id="activeAlertsList">
                                 <div class="alert-item">
                                     <h6>High Activity Detected</h6>
-                                    <p>Client 1 detected 15 bat calls in the last hour, exceeding the threshold of 10.</p>
+                                    <p>Client 1 detected 15 Bat calls in the last hour, exceeding the threshold of 10.</p>
                                     <div class="alert-time">
                                         <i class="bi bi-clock"></i> 10 minutes ago
                                     </div>
@@ -1339,7 +1339,7 @@
                                 <h6>Species Detection Alerts</h6>
                                 <div class="form-check form-switch mb-3">
                                     <input class="form-check-input" type="checkbox" id="rareSpeciesAlert" checked>
-                                    <label class="form-check-label" for="rareSpeciesAlert">Notify on rare species detection</label>
+                                    <label class="form-check-label" for="rareSpeciesAlert">Notify on rare Species detection</label>
                                 </div>
                                 
                                 <h6>Activity Thresholds</h6>
@@ -1393,7 +1393,7 @@
                                 <a href="#" class="list-group-item list-group-item-action" onclick="loadReportTemplate('weekly')">
                                     <i class="bi bi-calendar-week me-2"></i> Weekly Summary
                                 </a>
-                                <a href="#" class="list-group-item list-group-item-action" onclick="loadReportTemplate('species')">
+                                <a href="#" class="list-group-item list-group-item-action" onclick="loadReportTemplate('Species')">
                                     <i class="bi bi-binoculars me-2"></i> Species Report
                                 </a>
                                 <a href="#" class="list-group-item list-group-item-action" onclick="loadReportTemplate('client')">
@@ -1487,7 +1487,7 @@
                         <div class="card-body">
                             <div class="news-item">
                                 <h5>New Study Reveals Impact of Climate Change on Bat Populations</h5>
-                                <p>Researchers have found that rising temperatures are affecting bat hibernation patterns, leading to changes in their migration and feeding behaviors.</p>
+                                <p>Researchers have found that rising temperatures are affecting Bat hibernation patterns, leading to changes in their migration and feeding behaviors.</p>
                                 <div class="news-time">
                                     <i class="bi bi-clock"></i> 2 hours ago | Source: Bat Conservation International
                                 </div>
@@ -1495,7 +1495,7 @@
                             
                             <div class="news-item">
                                 <h5>Conservation Efforts Show Success in Protecting Endangered Bat Species</h5>
-                                <p>Protected areas and habitat restoration projects have led to a 15% increase in populations of the endangered Indiana bat over the past five years.</p>
+                                <p>Protected areas and habitat restoration projects have led to a 15% increase in populations of the endangered Indiana Bat over the past five years.</p>
                                 <div class="news-time">
                                     <i class="bi bi-clock"></i> 1 day ago | Source: Wildlife Journal
                                 </div>
@@ -1503,7 +1503,7 @@
                             
                             <div class="news-item">
                                 <h5>New Technology Helps Monitor Bat Activity in Urban Areas</h5>
-                                <p>Advanced acoustic monitoring systems are being deployed in cities to track bat populations and better understand their adaptation to urban environments.</p>
+                                <p>Advanced acoustic monitoring systems are being deployed in cities to track Bat populations and better understand their adaptation to urban environments.</p>
                                 <div class="news-time">
                                     <i class="bi bi-clock"></i> 3 days ago | Source: Science Daily
                                 </div>
@@ -1511,7 +1511,7 @@
                             
                             <div class="news-item">
                                 <h5>White-Nose Syndrome Continues to Threaten Bat Populations</h5>
-                                <p>The fungal disease has now been detected in three additional states, prompting renewed calls for research funding and conservation measures.</p>
+                                <p>The fungal Species has now been detected in three additional states, prompting renewed calls for research funding and conservation measures.</p>
                                 <div class="news-time">
                                     <i class="bi bi-clock"></i> 1 week ago | Source: National Wildlife Federation
                                 </div>
@@ -1605,9 +1605,9 @@
     <script>
         // Global variables
         let currentTab = 'dashboard';
-        let speciesData = {};
+        let SpeciesData = {};
         let recordingsData = [];
-        let batStats = {};
+        let BatStats = {};
         let clientsData = {};
         
         // Initialize the application when DOM is loaded
@@ -1671,7 +1671,7 @@ function setupTabNavigation() {
             document.getElementById(targetTab).classList.remove('d-none');
             
             // Load data for specific tabs if needed
-            if (targetTab === 'species-analysis') {
+            if (targetTab === 'Species-analysis') {
                 renderSpeciesCharts();
             } else if (targetTab === 'call-timeline') {
                 renderTimelineCharts();
@@ -1763,14 +1763,14 @@ function initializeApp() {
         }
         
         function loadBatStats() {
-            fetch('/api/bat_stats')
+            fetch('/api/Bat_stats')
                 .then(response => response.json())
                 .then(data => {
-                    batStats = data.stats;
+                    BatStats = data.stats;
                     updateStatsOverview();
                 })
                 .catch(error => {
-                    console.error('Error loading bat stats:', error);
+                    console.error('Error loading Bat stats:', error);
                 });
         }
         
@@ -1907,11 +1907,11 @@ function initializeApp() {
         }
         
         function updateStatsOverview() {
-            if (!batStats) return;
+            if (!BatStats) return;
             
-            document.getElementById('totalDetections').textContent = batStats.total_detections || 0;
-            document.getElementById('speciesCount').textContent = Object.keys(batStats.species_count || {}).length;
-            document.getElementById('activeClients').textContent = Object.keys(batStats.client_stats || {}).length;
+            document.getElementById('totalDetections').textContent = BatStats.total_detections || 0;
+            document.getElementById('SpeciesCount').textContent = Object.keys(BatStats.Species_count || {}).length;
+            document.getElementById('activeClients').textContent = Object.keys(BatStats.client_stats || {}).length;
             document.getElementById('activeAlerts').textContent = 2; // Hardcoded for now
         }
         
@@ -1926,7 +1926,7 @@ function initializeApp() {
                         <button class="btn btn-sm btn-outline-primary w-100 mb-2" onclick="showTab('dashboard')">
                             <i class="bi bi-speedometer2 me-2"></i> Dashboard
                         </button>
-                        <button class="btn btn-sm btn-outline-primary w-100 mb-2" onclick="showTab('species-analysis')">
+                        <button class="btn btn-sm btn-outline-primary w-100 mb-2" onclick="showTab('Species-analysis')">
                             <i class="bi bi-binoculars me-2"></i> Species
                         </button>
                         <button class="btn btn-sm btn-outline-primary w-100 mb-2" onclick="askAI('Show me recent unusual activity')">
@@ -1975,7 +1975,7 @@ function initializeApp() {
             document.querySelector('.fab-menu').style.display = 'none';
             
             // Load data for the tab if needed
-            if (tabId === 'species-analysis') {
+            if (tabId === 'Species-analysis') {
                 renderSpeciesCharts();
             } else if (tabId === 'call-timeline') {
                 renderTimelineCharts();
@@ -1985,7 +1985,7 @@ function initializeApp() {
         }
         
         function showSpeciesTab() {
-            showTab('species-analysis');
+            showTab('Species-analysis');
         }
         
         function setupAIChat() {
@@ -2042,22 +2042,22 @@ function initializeApp() {
                 // This is a mock response - in a real app, you'd get this from Ollama
                 let responseText = '';
                 const context = {
-                    species: "{{ species_prediction or 'Unknown' }}",
+                    Species: "{{ Species_prediction or 'Unknown' }}",
                     confidence: "{{ confidence or 'N/A' }}%",
                     timestamp: "{{ timestamp | datetimeformat or 'Unknown' }}",
                     client_id: "{{ client_id or '1' }}"
                 };
                 
-                if (question.toLowerCase().includes('species')) {
-                    responseText = `Based on your recent data, the most frequently detected species is ${context.species} with ${context.confidence} confidence. The last detection was at ${context.timestamp} from Client ${context.client_id}.`;
+                if (question.toLowerCase().includes('Species')) {
+                    responseText = `Based on your recent data, the most frequently detected Species is ${context.Species} with ${context.confidence} confidence. The last detection was at ${context.timestamp} from Client ${context.client_id}.`;
                 } else if (question.toLowerCase().includes('pattern') || question.toLowerCase().includes('activity')) {
                     responseText = `Your Bat activity typically peaks around dusk (6-8 PM) and dawn (4-6 AM). Recent data from Client ${context.client_id} shows increased activity compared to the monthly average.`;
                 } else if (question.toLowerCase().includes('conservation')) {
-                    responseText = `For ${context.species}, I recommend maintaining nearby water sources and preserving mature trees for roosting. Your area shows good biodiversity! Client ${context.client_id} has detected this species multiple times.`;
+                    responseText = `For ${context.Species}, I recommend maintaining nearby water sources and preserving mature trees for roosting. Your area shows good biodiversity! Client ${context.client_id} has detected this Species multiple times.`;
                 } else if (question.toLowerCase().includes('client')) {
-                    responseText = `Client ${context.client_id} is currently active and last reported data at ${context.timestamp}. It has detected ${context.species} with ${context.confidence} confidence.`;
+                    responseText = `Client ${context.client_id} is currently active and last reported data at ${context.timestamp}. It has detected ${context.Species} with ${context.confidence} confidence.`;
                 } else {
-                    responseText = `I've analyzed your Bat monitoring data. The most recent detection was ${context.species} at ${context.timestamp} from Client ${context.client_id} with ${context.confidence} confidence. How else can I assist you with your Bat research?`;
+                    responseText = `I've analyzed your Bat monitoring data. The most recent detection was ${context.Species} at ${context.timestamp} from Client ${context.client_id} with ${context.confidence} confidence. How else can I assist you with your Bat research?`;
                 }
                 
                 aiResponse.textContent = responseText;
@@ -2106,7 +2106,7 @@ function initializeApp() {
         function loadSpeciesData() {
             // In a real app, this would fetch from your API
             // Mock data for demonstration
-            speciesData = {
+            SpeciesData = {
                 "Pipistrellus pipistrellus": 42,
                 "Myotis daubentonii": 28,
                 "Nyctalus noctula": 15,
@@ -2114,35 +2114,35 @@ function initializeApp() {
                 "Eptesicus serotinus": 7
             };
             
-            // Populate species tabs and filters
+            // Populate Species tabs and filters
             renderSpeciesTabs();
             populateSpeciesFilter();
         }
         
         function renderSpeciesTabs() {
-            const speciesTabs = document.getElementById('speciesTabs');
-            const speciesTabContent = document.getElementById('speciesTabContent');
+            const SpeciesTabs = document.getElementById('SpeciesTabs');
+            const SpeciesTabContent = document.getElementById('SpeciesTabContent');
             
-            speciesTabs.innerHTML = '';
-            speciesTabContent.innerHTML = '';
+            SpeciesTabs.innerHTML = '';
+            SpeciesTabContent.innerHTML = '';
             
             let first = true;
-            for (const [species, count] of Object.entries(speciesData)) {
+            for (const [Species, count] of Object.entries(SpeciesData)) {
                 // Create tab
                 const tab = document.createElement('li');
                 tab.className = 'nav-item';
                 tab.innerHTML = `
-                    <button class="nav-link ${first ? 'active' : ''}" id="${species}-tab" data-bs-toggle="tab" 
-                        data-bs-target="#${species}" type="button" role="tab">
-                        ${species} <span class="badge bg-primary ms-1">${count}</span>
+                    <button class="nav-link ${first ? 'active' : ''}" id="${Species}-tab" data-bs-toggle="tab" 
+                        data-bs-target="#${Species}" type="button" role="tab">
+                        ${Species} <span class="badge bg-primary ms-1">${count}</span>
                     </button>
                 `;
-                speciesTabs.appendChild(tab);
+                SpeciesTabs.appendChild(tab);
                 
                 // Create tab content
                 const tabPane = document.createElement('div');
                 tabPane.className = `tab-pane fade ${first ? 'show active' : ''}`;
-                tabPane.id = species;
+                tabPane.id = Species;
                 tabPane.setAttribute('role', 'tabpanel');
                 tabPane.innerHTML = `
                     <div class="row">
@@ -2152,7 +2152,7 @@ function initializeApp() {
                                     <i class="bi bi-graph-up"></i> Call Characteristics
                                 </div>
                                 <div class="card-body">
-                                    <canvas id="${species}-chart" height="250"></canvas>
+                                    <canvas id="${Species}-chart" height="250"></canvas>
                                 </div>
                             </div>
                         </div>
@@ -2162,7 +2162,7 @@ function initializeApp() {
                                     <i class="bi bi-collection-play"></i> Recent Recordings
                                 </div>
                                 <div class="card-body">
-                                    <div class="list-group" id="${species}-recordings">
+                                    <div class="list-group" id="${Species}-recordings">
                                         <!-- Recordings will be loaded here -->
                                         <div class="text-center py-3">
                                             <div class="spinner-border spinner-border-sm"></div>
@@ -2174,15 +2174,15 @@ function initializeApp() {
                         </div>
                     </div>
                 `;
-                speciesTabContent.appendChild(tabPane);
+                SpeciesTabContent.appendChild(tabPane);
                 
                 first = false;
             }
             
-            // Initialize charts for each species
-            for (const species of Object.keys(speciesData)) {
-                renderSpeciesDetailChart(species);
-                loadSpeciesRecordings(species);
+            // Initialize charts for each Species
+            for (const Species of Object.keys(SpeciesData)) {
+                renderSpeciesDetailChart(Species);
+                loadSpeciesRecordings(Species);
             }
         }
 
@@ -2203,14 +2203,14 @@ function initializeApp() {
     gpsMapContainer.style.display = 'block';
 }
         
-        function renderSpeciesDetailChart(species) {
-            const ctx = document.getElementById(`${species}-chart`).getContext('2d');
+        function renderSpeciesDetailChart(Species) {
+            const ctx = document.getElementById(`${Species}-chart`).getContext('2d');
             
             // Mock data - in a real app, this would come from your API
             const data = {
                 labels: ['Frequency (kHz)', 'Duration (ms)', 'Peak Intensity', 'Repetition Rate'],
                 datasets: [{
-                    label: species,
+                    label: Species,
                     data: [
                         Math.random() * 50 + 20,  // Frequency
                         Math.random() * 50 + 10,  // Duration
@@ -2254,10 +2254,10 @@ function initializeApp() {
             });
         }
         
-        function loadSpeciesRecordings(species) {
+        function loadSpeciesRecordings(Species) {
             // In a real app, this would fetch from your API
             // Mock data for demonstration
-            const recordingsList = document.getElementById(`${species}-recordings`);
+            const recordingsList = document.getElementById(`${Species}-recordings`);
             recordingsList.innerHTML = '';
             
             const mockRecordings = [
@@ -2285,13 +2285,13 @@ function initializeApp() {
         
         function renderSpeciesCharts() {
             // Pie Chart
-            const pieCtx = document.getElementById('speciesPieChart').getContext('2d');
+            const pieCtx = document.getElementById('SpeciesPieChart').getContext('2d');
             new Chart(pieCtx, {
                 type: 'pie',
                 data: {
-                    labels: Object.keys(speciesData),
+                    labels: Object.keys(SpeciesData),
                     datasets: [{
-                        data: Object.values(speciesData),
+                        data: Object.values(SpeciesData),
                         backgroundColor: [
                             'rgba(44, 120, 115, 0.7)',
                             'rgba(111, 185, 143, 0.7)',
@@ -2319,14 +2319,14 @@ function initializeApp() {
             });
             
             // Bar Chart
-            const barCtx = document.getElementById('speciesBarChart').getContext('2d');
+            const barCtx = document.getElementById('SpeciesBarChart').getContext('2d');
             new Chart(barCtx, {
                 type: 'bar',
                 data: {
-                    labels: Object.keys(speciesData),
+                    labels: Object.keys(SpeciesData),
                     datasets: [{
                         label: 'Detections',
-                        data: Object.values(speciesData),
+                        data: Object.values(SpeciesData),
                         backgroundColor: 'rgba(44, 120, 115, 0.7)',
                         borderColor: 'rgba(44, 120, 115, 1)',
                         borderWidth: 1
@@ -2351,14 +2351,14 @@ function initializeApp() {
             // In a real app, this would fetch from your API
             // Mock data for demonstration
             recordingsData = [
-                { id: 1, timestamp: '2023-06-15 21:42:15', species: 'Pipistrellus pipistrellus', confidence: 92, duration: 320, frequency: 45 },
-                { id: 2, timestamp: '2023-06-15 20:15:33', species: 'Pipistrellus pipistrellus', confidence: 88, duration: 280, frequency: 47 },
-                { id: 3, timestamp: '2023-06-15 19:58:12', species: 'Myotis daubentonii', confidence: 76, duration: 420, frequency: 35 },
-                { id: 4, timestamp: '2023-06-14 22:05:47', species: 'Pipistrellus pipistrellus', confidence: 85, duration: 350, frequency: 43 },
-                { id: 5, timestamp: '2023-06-14 21:30:22', species: 'Nyctalus noctula', confidence: 91, duration: 380, frequency: 25 },
-                { id: 6, timestamp: '2023-06-13 23:12:08', species: 'Plecotus auritus', confidence: 68, duration: 500, frequency: 30 },
-                { id: 7, timestamp: '2023-06-13 21:45:39', species: 'Pipistrellus pipistrellus', confidence: 90, duration: 310, frequency: 46 },
-                { id: 8, timestamp: '2023-06-12 20:33:17', species: 'Eptesicus serotinus', confidence: 82, duration: 400, frequency: 28 }
+                { id: 1, timestamp: '2023-06-15 21:42:15', Species: 'Pipistrellus pipistrellus', confidence: 92, duration: 320, frequency: 45 },
+                { id: 2, timestamp: '2023-06-15 20:15:33', Species: 'Pipistrellus pipistrellus', confidence: 88, duration: 280, frequency: 47 },
+                { id: 3, timestamp: '2023-06-15 19:58:12', Species: 'Myotis daubentonii', confidence: 76, duration: 420, frequency: 35 },
+                { id: 4, timestamp: '2023-06-14 22:05:47', Species: 'Pipistrellus pipistrellus', confidence: 85, duration: 350, frequency: 43 },
+                { id: 5, timestamp: '2023-06-14 21:30:22', Species: 'Nyctalus noctula', confidence: 91, duration: 380, frequency: 25 },
+                { id: 6, timestamp: '2023-06-13 23:12:08', Species: 'Plecotus auritus', confidence: 68, duration: 500, frequency: 30 },
+                { id: 7, timestamp: '2023-06-13 21:45:39', Species: 'Pipistrellus pipistrellus', confidence: 90, duration: 310, frequency: 46 },
+                { id: 8, timestamp: '2023-06-12 20:33:17', Species: 'Eptesicus serotinus', confidence: 82, duration: 400, frequency: 28 }
             ];
             
             renderRecordingsTable();
@@ -2372,7 +2372,7 @@ function initializeApp() {
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td>${rec.timestamp}</td>
-                    <td><span class="badge bg-success">${rec.species}</span></td>
+                    <td><span class="badge bg-success">${rec.Species}</span></td>
                     <td>
                         <div class="progress" style="height: 20px;">
                             <div class="progress-bar bg-primary" role="progressbar" 
@@ -2400,15 +2400,15 @@ function initializeApp() {
         }
         
         function populateSpeciesFilter() {
-    const filter = document.getElementById('speciesFilter');
+    const filter = document.getElementById('SpeciesFilter');
     
     if (!filter) {
         console.warn('Species filter element not found');
         return;
     }
     
-    if (!speciesData || Object.keys(speciesData).length === 0) {
-        console.warn('No species data available');
+    if (!SpeciesData || Object.keys(SpeciesData).length === 0) {
+        console.warn('No Species data available');
         return;
     }
     
@@ -2417,11 +2417,11 @@ function initializeApp() {
         filter.remove(1);
     }
     
-    // Add species options
-    for (const species of Object.keys(speciesData)) {
+    // Add Species options
+    for (const Species of Object.keys(SpeciesData)) {
         const option = document.createElement('option');
-        option.value = species;
-        option.textContent = species;
+        option.value = Species;
+        option.textContent = Species;
         filter.appendChild(option);
     }
 }
@@ -2432,13 +2432,13 @@ function initializeApp() {
             
             setTimeout(() => {
                 // Simulate filtering
-                const speciesFilter = document.getElementById('speciesFilter').value;
+                const SpeciesFilter = document.getElementById('SpeciesFilter').value;
                 const confidenceFilter = parseInt(document.getElementById('confidenceFilter').value) || 0;
                 
                 let filteredData = [...recordingsData];
                 
-                if (speciesFilter) {
-                    filteredData = filteredData.filter(rec => rec.species === speciesFilter);
+                if (SpeciesFilter) {
+                    filteredData = filteredData.filter(rec => rec.Species === SpeciesFilter);
                 }
                 
                 if (confidenceFilter > 0) {
@@ -2453,7 +2453,7 @@ function initializeApp() {
                     const row = document.createElement('tr');
                     row.innerHTML = `
                         <td>${rec.timestamp}</td>
-                        <td><span class="badge bg-success">${rec.species}</span></td>
+                        <td><span class="badge bg-success">${rec.Species}</span></td>
                         <td>
                             <div class="progress" style="height: 20px;">
                                 <div class="progress-bar bg-primary" role="progressbar" 

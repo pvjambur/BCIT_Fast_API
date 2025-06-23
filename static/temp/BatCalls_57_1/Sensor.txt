@@ -1,0 +1,5 @@
+Client1 Temp: 27.44C
+Humidity: 54.50%
+Light: 28.33 lux
+Pressure: 920.34 hPa
+GPS: No fix obtained - check connections and sky view
