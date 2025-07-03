@@ -18,3 +18,5 @@ PyMuPDF
 torch
 transformers
 google-cloud-storage
+pydrive2
+jinja2
