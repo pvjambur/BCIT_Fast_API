@@ -11,535 +11,752 @@
     <script src="https://cdn.jsdelivr.net/npm/moment@2.29.1/moment.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.0/dist/chartjs-adapter-moment.min.js"></script>
     <style>
-        :root {
-            --sidebar-width: 280px;
-            --primary-color: #2c7873;
-            --secondary-color: #6fb98f;
-            --accent-color: #004445;
-            --dark-color: #021c1e;
-            --light-color: #f8f9fa;
-            --alert-color: #ff6b6b;
-        }
-        
-        body {
-            background-color: #f5f6fa;
-            display: flex;
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        /* Sidebar Styles */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: linear-gradient(135deg, var(--dark-color), #021c1e);
-            color: white;
-            position: fixed;
-            height: 100vh;
-            padding: 1rem;
-            box-shadow: 4px 0 15px rgba(0,0,0,0.1);
-            transition: all 0.3s;
-            z-index: 1000;
-            overflow-y: auto;
-        }
-        
-        .sidebar-header {
-            padding: 1rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            margin-bottom: 1.5rem;
-        }
-        
-        .sidebar-header h3 {
-            color: white;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .sidebar-menu {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        
-        .sidebar-menu li {
-            margin-bottom: 0.5rem;
-        }
-        
-        .sidebar-menu a {
-            display: flex;
-            align-items: center;
-            padding: 0.75rem 1rem;
-            color: rgba(255,255,255,0.8);
-            text-decoration: none;
-            border-radius: 8px;
-            transition: all 0.2s;
-            gap: 0.75rem;
-        }
-        
-        .sidebar-menu a:hover, .sidebar-menu a.active {
-            background-color: rgba(44, 120, 115, 0.2);
-            color: white;
-        }
-        
-        .sidebar-menu a i {
-            font-size: 1.25rem;
-        }
-        
-        .sidebar-footer {
-            position: sticky;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding-top: 1rem;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            background: linear-gradient(135deg, var(--dark-color), #021c1e);
-        }
-        
-        /* Client List Styles */
-        .client-list {
-            margin-top: 1rem;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding-top: 1rem;
-        }
-        
-        .client-item {
-            margin-bottom: 0.5rem;
-        }
-        
-        .client-header {
-            display: flex;
-            align-items: center;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .client-header:hover {
-            background-color: rgba(44, 120, 115, 0.2);
-        }
-        
-        .client-header.active {
-            background-color: rgba(44, 120, 115, 0.3);
-        }
-        
-        .client-calls {
-            padding-left: 1.5rem;
-            margin-top: 0.5rem;
-            display: none;
-        }
-        
-        .client-calls.show {
-            display: block;
-        }
-        
-        .call-item {
-            padding: 0.5rem 1rem;
-            margin-bottom: 0.25rem;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s;
-            font-size: 0.9rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .call-item:hover {
-            background-color: rgba(44, 120, 115, 0.2);
-        }
-        
-        .call-item.active {
-            background-color: rgba(44, 120, 115, 0.3);
-            font-weight: 500;
-        }
-        
-        /* Main Content Styles */
-        .main-content {
-            flex: 1;
-            margin-left: var(--sidebar-width);
-            padding: 2rem;
-            transition: all 0.3s;
-        }
-        
-        /* Card Styles */
-        .card {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-            margin-bottom: 1.5rem;
-            transition: transform 0.2s, box-shadow 0.2s;
-            background-color: white;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-        
-        .card-header {
-            background-color: white;
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-            font-weight: 600;
-            border-radius: 12px 12px 0 0 !important;
-            padding: 1.25rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-        
-        /* Loading Spinner */
-        .loading-spinner {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0,0,0,0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-            flex-direction: column;
-        }
-        
-        .spinner-text {
-            color: white;
-            margin-top: 1rem;
-            font-size: 1.1rem;
-        }
-        
-        /* Species Styles */
-        .species-image {
-            max-height: 250px;
-            object-fit: contain;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-        }
-        
-        /* Audio Player */
-        .audio-player {
-            width: 100%;
-            border-radius: 8px;
-            margin-top: 1rem;
-        }
-        
-        /* Audio Metadata */
-        .audio-metadata {
-            background-color: #f8f9fa;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-top: 1rem;
-            font-size: 0.9rem;
-        }
-        
-        .metadata-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 0.5rem;
-        }
-        
-        /* Chat Interface */
-        .chat-container {
-            height: 500px;
-            display: flex;
-            flex-direction: column;
-            background-color: white;
-            border-radius: 12px;
-            overflow: hidden;
-        }
-        
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 1.5rem;
-            background-color: #f9f9f9;
-        }
-        
-        .chat-input {
-            border-top: 1px solid #eee;
-            padding: 1rem;
-            background-color: white;
-        }
-        
-        .message {
-            margin-bottom: 1rem;
-            max-width: 80%;
-        }
-        
-        .user-message {
-            margin-left: auto;
-            background-color: var(--primary-color);
-            color: white;
-            padding: 0.75rem 1rem;
-            border-radius: 18px 18px 4px 18px;
-        }
-        
-        .bot-message {
-            margin-right: auto;
-            background-color: #e9ecef;
-            padding: 0.75rem 1rem;
-            border-radius: 18px 18px 18px 4px;
-        }
-        
-        /* Timeline */
-        .timeline-container {
-            height: 400px;
-            position: relative;
-        }
-        
-        /* Tabs */
-        .nav-tabs .nav-link {
-            border: none;
-            color: #6c757d;
-            font-weight: 500;
-            padding: 0.75rem 1.25rem;
-        }
-        
-        .nav-tabs .nav-link.active {
-            color: var(--primary-color);
-            border-bottom: 3px solid var(--primary-color);
-            background-color: transparent;
-        }
-        
-        /* Badges */
-        .badge {
-            font-weight: 500;
-            padding: 0.35em 0.65em;
-        }
-        
-        /* Alert Styles */
-        .alert-item {
-            padding: 1rem;
-            border-left: 4px solid var(--alert-color);
-            margin-bottom: 1rem;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-        
-        .alert-item .alert-time {
-            font-size: 0.8rem;
-            color: #6c757d;
-        }
-        
-        /* Map Styles */
-        .map-container {
-            height: 300px;
-            border-radius: 8px;
-            overflow: hidden;
-            margin-bottom: 1rem;
-        }
-        
-        .map-iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-        
-        .map-info {
-            padding: 1rem;
-            background-color: white;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-        }
-        
-        /* Connection Lines */
-        .connection-line {
-            position: relative;
-            height: 60px;
-            margin: 1rem 0;
-        }
-        
-        .connection-line::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background-color: var(--primary-color);
-            opacity: 0.3;
-        }
-        
-        .connection-dot {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background-color: var(--primary-color);
-        }
-        
-        .connection-dot.server {
-            left: 20%;
-        }
-        
-        .connection-dot.client1 {
-            left: 40%;
-            background-color: var(--secondary-color);
-        }
-        
-        .connection-dot.client2 {
-            left: 60%;
-            background-color: #ffa502;
-        }
-        
-        .connection-label {
-            position: absolute;
-            top: 100%;
-            transform: translateX(-50%);
-            font-size: 0.8rem;
-            color: var(--dark-color);
-        }
-        
-        /* Responsive */
-        @media (max-width: 992px) {
-            .sidebar {
-                transform: translateX(-100%);
-            }
-            
-            .sidebar.active {
-                transform: translateX(0);
-            }
-            
-            .main-content {
-                margin-left: 0;
-            }
-            
-            .sidebar-toggle {
-                display: block !important;
-            }
-        }
-        
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-        
-        ::-webkit-scrollbar-thumb {
-            background: #ccc;
-            border-radius: 10px;
-        }
-        
-        ::-webkit-scrollbar-thumb:hover {
-            background: #aaa;
-        }
-        
-        /* Floating Action Button */
-        .fab {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background-color: var(--primary-color);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 15px rgba(44, 120, 115, 0.4);
-            cursor: pointer;
-            z-index: 100;
-            transition: all 0.2s;
-        }
-        
-        .fab:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(44, 120, 115, 0.6);
-        }
-        
-        /* Species Gallery */
-        .species-card {
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .species-card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .species-card img {
-            height: 180px;
-            object-fit: cover;
-            border-radius: 8px 8px 0 0;
-        }
-        
-        /* Custom Toggle */
-        .sidebar-toggle {
-            display: none;
-            position: fixed;
-            top: 1rem;
-            left: 1rem;
-            z-index: 1100;
-            background: var(--primary-color);
-            color: white;
-            border: none;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
-        
-        /* Report Styles */
-        .report-section {
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid #eee;
-        }
-        
-        /* News Feed */
-        .news-item {
-            padding: 1rem;
-            margin-bottom: 1rem;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-        
-        .news-item .news-time {
-            font-size: 0.8rem;
-            color: #6c757d;
-        }
-        
-        /* Alert Configuration */
-        .alert-config {
-            background-color: white;
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-        }
+        /* ===================================
+   CSS VARIABLES & ROOT CONFIGURATION
+   =================================== */
+:root {
+    /* Color Palette */
+    --sidebar-width: 280px;
+    --primary-color: #2c7873;
+    --secondary-color: #6fb98f;
+    --accent-color: #004445;
+    --dark-color: #021c1e;
+    --light-color: #f8f9fa;
+    --alert-color: #ff6b6b;
+    
+    /* Spacing & Layout */
+    --border-radius: 12px;
+    --border-radius-small: 8px;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    
+    /* Typography */
+    --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --font-size-sm: 0.8rem;
+    --font-size-base: 0.9rem;
+    --font-size-lg: 1.1rem;
+    --font-size-xl: 1.25rem;
+    
+    /* Effects */
+    --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.05);
+    --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+    --shadow-hover: 0 6px 20px rgba(44, 120, 115, 0.6);
+    
+    /* Transitions */
+    --transition-fast: all 0.2s ease;
+    --transition-normal: all 0.3s ease;
+}
 
-        .tab-content {
+/* ===================================
+   GLOBAL STYLES & RESET
+   =================================== */
+body {
+    background-color: #f5f6fa;
+    display: flex;
+    min-height: 100vh;
+    font-family: var(--font-family);
+    margin: 0;
+    padding: 0;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
+}
+
+/* ===================================
+   SIDEBAR STYLES
+   =================================== */
+.sidebar {
+    width: var(--sidebar-width);
+    background: linear-gradient(135deg, var(--dark-color), #021c1e);
+    color: white;
+    position: fixed;
+    height: 100vh;
+    padding: var(--spacing-md);
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1);
+    transition: var(--transition-normal);
+    z-index: 1000;
+    overflow-y: auto;
+}
+
+.sidebar-header {
+    padding: var(--spacing-md);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: var(--spacing-lg);
+}
+
+.sidebar-header h3 {
+    color: white;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin: 0;
+}
+
+.sidebar-menu {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar-menu li {
+    margin-bottom: var(--spacing-sm);
+}
+
+.sidebar-menu a {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem var(--spacing-md);
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    border-radius: var(--border-radius-small);
+    transition: var(--transition-fast);
+    gap: 0.75rem;
+}
+
+.sidebar-menu a:hover,
+.sidebar-menu a.active {
+    background-color: rgba(44, 120, 115, 0.2);
+    color: white;
+    transform: translateX(4px);
+}
+
+.sidebar-menu a i {
+    font-size: var(--font-size-xl);
+}
+
+.sidebar-footer {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding-top: var(--spacing-md);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, var(--dark-color), #021c1e);
+}
+
+/* ===================================
+   CLIENT LIST STYLES
+   =================================== */
+.client-list {
+    margin-top: var(--spacing-md);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: var(--spacing-md);
+}
+
+.client-item {
+    margin-bottom: var(--spacing-sm);
+}
+
+.client-header {
+    display: flex;
+    align-items: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius-small);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.client-header:hover {
+    background-color: rgba(44, 120, 115, 0.2);
+}
+
+.client-header.active {
+    background-color: rgba(44, 120, 115, 0.3);
+}
+
+.client-calls {
+    padding-left: var(--spacing-lg);
+    margin-top: var(--spacing-sm);
+    display: none;
+}
+
+.client-calls.show {
+    display: block;
+}
+
+.call-item {
+    padding: var(--spacing-sm) var(--spacing-md);
+    margin-bottom: 0.25rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    font-size: var(--font-size-base);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.call-item:hover {
+    background-color: rgba(44, 120, 115, 0.2);
+}
+
+.call-item.active {
+    background-color: rgba(44, 120, 115, 0.3);
+    font-weight: 500;
+}
+
+/* ===================================
+   MAIN CONTENT STYLES
+   =================================== */
+.main-content {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    padding: var(--spacing-xl);
+    transition: var(--transition-normal);
+}
+
+/* ===================================
+   CARD STYLES
+   =================================== */
+.card {
+    border: none;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-md);
+    margin-bottom: var(--spacing-lg);
+    transition: var(--transition-fast);
+    background-color: white;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.card-header {
+    background-color: white;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    font-weight: 600;
+    border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* ===================================
+   LOADING SPINNER
+   =================================== */
+.loading-spinner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    flex-direction: column;
+}
+
+.spinner-text {
+    color: white;
+    margin-top: var(--spacing-md);
+    font-size: var(--font-size-lg);
+}
+
+/* ===================================
+   SPECIES STYLES
+   =================================== */
+.species-image {
+    max-height: 250px;
+    object-fit: contain;
+    border-radius: var(--border-radius-small);
+    margin-bottom: var(--spacing-md);
+}
+
+.species-card {
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.species-card:hover {
+    transform: translateY(-5px);
+}
+
+.species-card img {
+    height: 180px;
+    object-fit: cover;
+    border-radius: var(--border-radius-small) var(--border-radius-small) 0 0;
+}
+
+/* ===================================
+   AUDIO PLAYER STYLES
+   =================================== */
+.audio-player {
+    width: 100%;
+    border-radius: var(--border-radius-small);
+    margin-top: var(--spacing-md);
+}
+
+.audio-metadata {
+    background-color: var(--light-color);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-small);
+    margin-top: var(--spacing-md);
+    font-size: var(--font-size-base);
+}
+
+.metadata-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: var(--spacing-sm);
+}
+
+/* ===================================
+   CHAT INTERFACE STYLES
+   =================================== */
+.chat-container {
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--spacing-lg);
+    background-color: #f9f9f9;
+}
+
+.chat-input {
+    border-top: 1px solid #eee;
+    padding: var(--spacing-md);
+    background-color: white;
+}
+
+.message {
+    margin-bottom: var(--spacing-md);
+    max-width: 80%;
+}
+
+.user-message {
+    margin-left: auto;
+    background-color: var(--primary-color);
+    color: white;
+    padding: 0.75rem var(--spacing-md);
+    border-radius: 18px 18px 4px 18px;
+}
+
+.bot-message {
+    margin-right: auto;
+    background-color: #e9ecef;
+    padding: 0.75rem var(--spacing-md);
+    border-radius: 18px 18px 18px 4px;
+}
+
+/* ===================================
+   TIMELINE STYLES
+   =================================== */
+.timeline-container {
+    height: 400px;
+    position: relative;
+}
+
+/* ===================================
+   TABS STYLES
+   =================================== */
+.nav-tabs .nav-link {
+    border: none;
+    color: #6c757d;
+    font-weight: 500;
+    padding: 0.75rem 1.25rem;
+    transition: var(--transition-fast);
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--primary-color);
+    border-bottom: 3px solid var(--primary-color);
+    background-color: transparent;
+}
+
+.tab-content {
     transition: opacity 0.3s ease;
 }
+
 .tab-content.d-none {
     display: none !important;
     opacity: 0;
 }
+
 .tab-content:not(.d-none) {
     opacity: 1;
+}
+
+/* ===================================
+   BADGES STYLES
+   =================================== */
+.badge {
+    font-weight: 500;
+    padding: 0.35em 0.65em;
+    border-radius: 20px;
+}
+
+/* ===================================
+   ALERT STYLES
+   =================================== */
+.alert-item {
+    padding: var(--spacing-md);
+    border-left: 4px solid var(--alert-color);
+    margin-bottom: var(--spacing-md);
+    background-color: white;
+    border-radius: var(--border-radius-small);
+    box-shadow: var(--shadow-sm);
+}
+
+.alert-item .alert-time {
+    font-size: var(--font-size-sm);
+    color: #6c757d;
+}
+
+.alert-config {
+    background-color: white;
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-small);
+    margin-bottom: var(--spacing-md);
+}
+
+/* ===================================
+   MAP STYLES
+   =================================== */
+.map-container {
+    height: 300px;
+    border-radius: var(--border-radius-small);
+    overflow: hidden;
+    margin-bottom: var(--spacing-md);
+}
+
+.map-iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.map-info {
+    padding: var(--spacing-md);
+    background-color: white;
+    border-radius: var(--border-radius-small);
+    margin-bottom: var(--spacing-md);
 }
 
 #clientLocationMap {
     width: 100%;
     height: 300px;
-    border-radius: 8px;
+    border-radius: var(--border-radius-small);
     overflow: hidden;
 }
 
 #gpsMapContainer .card-body {
     padding: 0;
+}
+
+/* ===================================
+   CONNECTION LINES STYLES
+   =================================== */
+.connection-line {
+    position: relative;
+    height: 60px;
+    margin: var(--spacing-md) 0;
+}
+
+.connection-line::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: var(--primary-color);
+    opacity: 0.3;
+}
+
+.connection-dot {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+}
+
+.connection-dot.server {
+    left: 20%;
+}
+
+.connection-dot.client1 {
+    left: 40%;
+    background-color: var(--secondary-color);
+}
+
+.connection-dot.client2 {
+    left: 60%;
+    background-color: #ffa502;
+}
+
+.connection-label {
+    position: absolute;
+    top: 100%;
+    transform: translateX(-50%);
+    font-size: var(--font-size-sm);
+    color: var(--dark-color);
+}
+
+/* ===================================
+   FLOATING ACTION BUTTON
+   =================================== */
+.fab {
+    position: fixed;
+    bottom: var(--spacing-xl);
+    right: var(--spacing-xl);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(44, 120, 115, 0.4);
+    cursor: pointer;
+    z-index: 100;
+    transition: var(--transition-fast);
+    border: none;
+}
+
+.fab:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-hover);
+}
+
+/* ===================================
+   MOBILE SIDEBAR TOGGLE
+   =================================== */
+.sidebar-toggle {
+    display: none;
+    position: fixed;
+    top: var(--spacing-md);
+    left: var(--spacing-md);
+    z-index: 1100;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-sm);
+}
+
+/* ===================================
+   REPORT STYLES
+   =================================== */
+.report-section {
+    margin-bottom: var(--spacing-xl);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid #eee;
+}
+
+.sources {
+    border-top: 1px solid #eee;
+    padding-top: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+}
+
+.report-actions .btn {
+    text-align: left;
+    white-space: normal;
+}
+
+.report-preview {
+    height: 600px;
+    border: 1px solid #dee2e6;
+    border-radius: var(--border-radius-small);
+    margin-bottom: var(--spacing-md);
+}
+
+/* ===================================
+   NEWS FEED STYLES
+   =================================== */
+.news-item {
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    background-color: white;
+    border-radius: var(--border-radius-small);
+    box-shadow: var(--shadow-sm);
+}
+
+.news-item .news-time {
+    font-size: var(--font-size-sm);
+    color: #6c757d;
+}
+
+/* ===================================
+   PDF UPLOAD STYLES
+   =================================== */
+.pdf-upload-container {
+    border: 2px dashed #dee2e6;
+    border-radius: var(--border-radius-small);
+    padding: var(--spacing-xl);
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+    transition: var(--transition-fast);
+}
+
+.pdf-upload-container.dragover {
+    border-color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.download-item {
+    padding: 0.75rem var(--spacing-md);
+    border: 1px solid #dee2e6;
+    border-radius: var(--border-radius-small);
+    margin-bottom: var(--spacing-sm);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.download-options {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* ===================================
+   AI RESPONSE STYLES
+   =================================== */
+.ai-response pre {
+    background-color: var(--light-color);
+    padding: var(--spacing-md);
+    border-radius: var(--border-radius-small);
+    overflow-x: auto;
+}
+
+.ai-response table {
+    width: 100%;
+    margin-bottom: var(--spacing-md);
+    border-collapse: collapse;
+}
+
+.ai-response table,
+.ai-response th,
+.ai-response td {
+    border: 1px solid #dee2e6;
+}
+
+.ai-response th,
+.ai-response td {
+    padding: var(--spacing-sm);
+}
+
+.ai-response img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--border-radius-small);
+    margin: var(--spacing-sm) 0;
+}
+
+/* ===================================
+   TYPOGRAPHY STYLES
+   =================================== */
+pre {
+    background-color: var(--light-color);
+    padding: var(--spacing-md);
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+code {
+    background-color: var(--light-color);
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+/* ===================================
+   RESPONSIVE DESIGN
+   =================================== */
+@media (max-width: 992px) {
+    .sidebar {
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.active {
+        transform: translateX(0);
+    }
+    
+    .main-content {
+        margin-left: 0;
+        padding: var(--spacing-md);
+    }
+    
+    .sidebar-toggle {
+        display: flex !important;
+    }
+    
+    .fab {
+        bottom: var(--spacing-md);
+        right: var(--spacing-md);
+    }
+}
+
+@media (max-width: 768px) {
+    .main-content {
+        padding: var(--spacing-sm);
+    }
+    
+    .card {
+        margin-bottom: var(--spacing-md);
+    }
+    
+    .species-card img {
+        height: 140px;
+    }
+    
+    .chat-container {
+        height: 400px;
+    }
+}
+
+@media (max-width: 576px) {
+    :root {
+        --sidebar-width: 100%;
+    }
+    
+    .message {
+        max-width: 95%;
+    }
+    
+    .connection-dot {
+        width: 8px;
+        height: 8px;
+    }
 }
     </style>
 </head>
@@ -590,6 +807,18 @@
                 <a href="#" data-tab="alerts">
                     <i class="bi bi-bell"></i>
                     <span>Alerts</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" data-tab="downloads">
+                    <i class="bi bi-download"></i>
+                    <span>Downloads</span>
+                </a>
+            </li>
+            <li>
+                <a href="#" data-tab="pdf-qa">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                    <span>PDF Analysis</span>
                 </a>
             </li>
             <li>
@@ -1202,13 +1431,13 @@
             </div>
         </div>
         
-        <!-- AI Assistant Tab -->
+        <!-- Modify AI Assistant Tab -->
         <div class="tab-content d-none" id="ai-assistant">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="mb-0"><i class="bi bi-robot text-primary me-2"></i> AI Assistant</h2>
                 <div>
                     <span class="badge bg-success">
-                        <i class="bi bi-lightning-charge"></i> Powered by Ollama
+                        <i class="bi bi-lightning-charge"></i> Powered by GROQ
                     </span>
                 </div>
             </div>
@@ -1224,7 +1453,7 @@
                                 <button class="btn btn-outline-primary text-start" onclick="askAI('What species did we detect most frequently?')">
                                     <i class="bi bi-question-circle me-2"></i> Frequent Species
                                 </button>
-                                <button class="btn btn-outline-primary text-start" onclick="askAI('Show me unusual Bat activity patterns.')">
+                                <button class="btn btn-outline-primary text-start" onclick="askAI('Show me unusual bat activity patterns.')">
                                     <i class="bi bi-graph-up-arrow me-2"></i> Activity Patterns
                                 </button>
                                 <button class="btn btn-outline-primary text-start" onclick="askAI('Compare today\'s data with historical averages.')">
@@ -1233,35 +1462,31 @@
                                 <button class="btn btn-outline-primary text-start" onclick="askAI('Suggest conservation actions based on our data.')">
                                     <i class="bi bi-heart me-2"></i> Conservation Tips
                                 </button>
+                                <button class="btn btn-outline-primary text-start" onclick="askAI('Generate a summary report of the last week.')">
+                                    <i class="bi bi-file-earmark-text me-2"></i> Generate Report
+                                </button>
                             </div>
                         </div>
                     </div>
                     
                     <div class="card mt-4">
-                        <div class="card-header">
-                            <i class="bi bi-info-circle me-2"></i> Current Context
-                        </div>
-                        <div class="card-body">
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    Last Detection
-                                    <span class="badge bg-primary">{{ timestamp | datetimeformat }}</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    Current Species
-                                    <span class="badge bg-success">{{ species_prediction or 'Unknown' }}</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    Confidence
-                                    <span class="badge bg-info">{{ confidence or 'N/A' }}%</span>
-                                </li>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    Client
-                                    <span class="badge bg-secondary">{{ client_id or '1' }}</span>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
+        <div class="card-header">
+            <i class="bi bi-file-earmark-text me-2"></i> Report Actions
+        </div>
+        <div class="card-body">
+            <div class="d-grid gap-2">
+                <button class="btn btn-outline-primary text-start" onclick="askReportQuestion('Summarize the key findings from the reports')">
+                    <i class="bi bi-file-text me-2"></i> Summarize Reports
+                </button>
+                <button class="btn btn-outline-primary text-start" onclick="askReportQuestion('What trends can you identify across the reports?')">
+                    <i class="bi bi-graph-up me-2"></i> Identify Trends
+                </button>
+                <button class="btn btn-outline-primary text-start" onclick="askReportQuestion('Generate recommendations based on the report data')">
+                    <i class="bi bi-lightbulb me-2"></i> Generate Recommendations
+                </button>
+            </div>
+        </div>
+    </div>
                 </div>
                 
                 <div class="col-md-8">
@@ -1273,12 +1498,12 @@
                             <div class="chat-container">
                                 <div class="chat-messages" id="chatMessages">
                                     <div class="message bot-message">
-                                        Hello! I'm your BatCall AI assistant. How can I help you with your Bat monitoring data today?
+                                        Hello! I'm your BatCall AI assistant powered by GROQ. How can I help you with your bat monitoring data today?
                                     </div>
                                 </div>
                                 <div class="chat-input">
                                     <div class="input-group">
-                                        <input type="text" class="form-control" placeholder="Ask about your Bat data..." id="aiQuestion">
+                                        <input type="text" class="form-control" placeholder="Ask about your bat data..." id="aiQuestion">
                                         <button class="btn btn-primary" type="button" id="askAIButton">
                                             <i class="bi bi-send"></i>
                                         </button>
@@ -1367,8 +1592,152 @@
                 </div>
             </div>
         </div>
+
+        <!-- New Downloads Tab -->
+        <div class="tab-content d-none" id="downloads">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="bi bi-download text-primary me-2"></i> Data Downloads</h2>
+                <div>
+                    <button class="btn btn-primary" onclick="exportAllData()">
+                        <i class="bi bi-file-earmark-excel me-1"></i> Export to Excel
+                    </button>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-pc-display me-2"></i> Client Data Downloads
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Select Client</label>
+                                <select class="form-select" id="downloadClientSelect">
+                                    <option value="1">Client 1</option>
+                                    <option value="2">Client 2</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Select Items to Download</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="downloadSensor" checked>
+                                    <label class="form-check-label" for="downloadSensor">Sensor Data</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="downloadCamera" checked>
+                                    <label class="form-check-label" for="downloadCamera">Camera Images</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="downloadSpectrogram" checked>
+                                    <label class="form-check-label" for="downloadSpectrogram">Spectrograms</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="downloadAudio" checked>
+                                    <label class="form-check-label" for="downloadAudio">Audio Recordings</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="downloadMetadata" checked>
+                                    <label class="form-check-label" for="downloadMetadata">Metadata</label>
+                                </div>
+                            </div>
+                            
+                            <button class="btn btn-primary w-100" onclick="downloadClientData()">
+                                <i class="bi bi-download me-1"></i> Download Selected
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-mic me-2"></i> Recording Downloads
+                        </div>
+                        <div class="card-body download-options">
+                            <div class="download-item">
+                                <div>
+                                    <h6>Recording_20230615_214215</h6>
+                                    <small class="text-muted">Pipistrellus pipistrellus (92%)</small>
+                                </div>
+                                <button class="btn btn-sm btn-outline-primary" onclick="downloadRecording('rec001')">
+                                    <i class="bi bi-download"></i> Download
+                                </button>
+                            </div>
+                            <!-- More recording items would be dynamically loaded -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         
-        <!-- Reports Tab -->
+        <!-- New PDF Analysis Tab -->
+        <div class="tab-content d-none" id="pdf-qa">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0"><i class="bi bi-file-earmark-pdf text-primary me-2"></i> PDF Analysis</h2>
+                <div>
+                    <button class="btn btn-primary" onclick="document.getElementById('pdfUpload').click()">
+                        <i class="bi bi-upload me-1"></i> Upload PDF
+                    </button>
+                    <input type="file" id="pdfUpload" accept=".pdf" style="display: none;" onchange="handlePdfUpload(this.files)">
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-file-earmark me-2"></i> Uploaded PDFs
+                        </div>
+                        <div class="card-body">
+                            <div id="uploadedPdfsList">
+                                <!-- PDFs will be listed here -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <i class="bi bi-chat-left-text me-2"></i> Ask About PDF
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label">Select PDF</label>
+                                <select class="form-select" id="pdfSelect">
+                                    <!-- Options will be added dynamically -->
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Your Question</label>
+                                <textarea class="form-control" id="pdfQuestion" rows="3" placeholder="Ask a question about the selected PDF"></textarea>
+                            </div>
+                            <button class="btn btn-primary w-100" onclick="askAboutPdf()">
+                                <i class="bi bi-send me-1"></i> Ask
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-robot me-2"></i> PDF Analysis Results
+                        </div>
+                        <div class="card-body">
+                            <div id="pdfAnalysisResults">
+                                <div class="text-center py-4 text-muted">
+                                    <i class="bi bi-file-earmark-pdf" style="font-size: 2rem;"></i>
+                                    <p class="mt-2">Upload a PDF and ask questions about it</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modify Reports Tab -->
         <div class="tab-content d-none" id="reports">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2 class="mb-0"><i class="bi bi-file-earmark-text text-primary me-2"></i> Reports</h2>
@@ -1399,6 +1768,20 @@
                                 <a href="#" class="list-group-item list-group-item-action" onclick="loadReportTemplate('client')">
                                     <i class="bi bi-pc-display me-2"></i> Client Report
                                 </a>
+                                <a href="#" class="list-group-item list-group-item-action" onclick="loadReportTemplate('full')">
+                                    <i class="bi bi-file-earmark-text me-2"></i> Full Data Report
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <i class="bi bi-clock-history me-2"></i> Recent Reports
+                        </div>
+                        <div class="card-body">
+                            <div class="list-group" id="recentReportsList">
+                                <!-- Reports will be listed here -->
                             </div>
                         </div>
                     </div>
@@ -1415,14 +1798,28 @@
                                 <input type="text" class="form-control" id="reportTitle" value="Bat Activity Report">
                             </div>
                             
-                            <div class="mb-3">
-                                <label class="form-label">Date Range</label>
-                                <select class="form-select" id="reportDateRange">
-                                    <option value="24h">Last 24 Hours</option>
-                                    <option value="7d">Last 7 Days</option>
-                                    <option value="30d">Last 30 Days</option>
-                                    <option value="custom">Custom Range</option>
-                                </select>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Date Range</label>
+                                        <select class="form-select" id="reportDateRange">
+                                            <option value="24h">Last 24 Hours</option>
+                                            <option value="7d">Last 7 Days</option>
+                                            <option value="30d">Last 30 Days</option>
+                                            <option value="custom">Custom Range</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3" id="customDateRange" style="display: none;">
+                                        <label class="form-label">Custom Dates</label>
+                                        <div class="input-group">
+                                            <input type="date" class="form-control" id="reportStartDate">
+                                            <span class="input-group-text">to</span>
+                                            <input type="date" class="form-control" id="reportEndDate">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                             
                             <div class="mb-3">
@@ -1451,14 +1848,30 @@
                                     <input class="form-check-input" type="checkbox" id="sectionRecommendations" checked>
                                     <label class="form-check-label" for="sectionRecommendations">Recommendations</label>
                                 </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="sectionRawData">
+                                    <label class="form-check-label" for="sectionRawData">Raw Data</label>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Format</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="reportFormat" id="formatPDF" checked>
+                                    <label class="form-check-label" for="formatPDF">PDF</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="reportFormat" id="formatExcel">
+                                    <label class="form-check-label" for="formatExcel">Excel</label>
+                                </div>
                             </div>
                             
                             <div class="d-flex justify-content-between">
                                 <button class="btn btn-outline-primary">
                                     <i class="bi bi-eye me-1"></i> Preview
                                 </button>
-                                <button class="btn btn-primary">
-                                    <i class="bi bi-download me-1"></i> Download PDF
+                                <button class="btn btn-primary" onclick="generateCustomReport()">
+                                    <i class="bi bi-download me-1"></i> Generate Report
                                 </button>
                             </div>
                         </div>
@@ -1466,6 +1879,7 @@
                 </div>
             </div>
         </div>
+    </div>
         
         <!-- News Feed Tab -->
         <div class="tab-content d-none" id="newsfeed">
@@ -1588,6 +2002,29 @@
         </div>
     </div>
 
+    <!-- New PDF Preview Modal -->
+    <div class="modal fade" id="pdfPreviewModal" tabindex="-1" aria-labelledby="pdfPreviewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="pdfPreviewModalLabel">Report Preview</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="report-preview">
+                        <iframe id="pdfPreviewFrame" width="100%" height="100%" style="border: none;"></iframe>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="downloadCurrentReport()">
+                        <i class="bi bi-download me-1"></i> Download
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Floating Action Button -->
     <div class="fab" id="fabButton" data-bs-toggle="tooltip" data-bs-placement="left" title="Quick Actions">
         <i class="bi bi-lightning-charge" style="font-size: 1.5rem;"></i>
@@ -1609,6 +2046,9 @@
         let recordingsData = [];
         let batStats = {};
         let clientsData = {};
+        let chatHistory = [];
+        let uploadedPdfs = [];
+        
         
         // Initialize the application when DOM is loaded
         document.addEventListener('DOMContentLoaded', function() {
@@ -1641,6 +2081,17 @@
                 document.getElementById('loadingSpinner').style.display = 'flex';
                 location.reload();
             }, 30000);
+
+            document.getElementById('reportDateRange').addEventListener('change', function() {
+                document.getElementById('customDateRange').style.display = 
+                    this.value === 'custom' ? 'block' : 'none';
+            });
+            
+            // Set up drag and drop for PDF upload
+            setupPdfUploadDragDrop();
+            
+            // Load any previously uploaded PDFs
+            loadUploadedPdfs();
         }
         
         function updateCurrentTime() {
@@ -2645,6 +3096,491 @@ function initializeApp() {
         function hideLoading() {
             document.getElementById('loadingSpinner').style.display = 'none';
         }
+
+        function setupPdfUploadDragDrop() {
+            const dropArea = document.createElement('div');
+            dropArea.className = 'pdf-upload-container';
+            dropArea.innerHTML = `
+                <i class="bi bi-file-earmark-pdf" style="font-size: 2rem;"></i>
+                <h5 class="mt-3">Drag & Drop PDF Files Here</h5>
+                <p class="text-muted">or click to browse files</p>
+                <input type="file" id="pdfDropUpload" accept=".pdf" style="display: none;">
+            `;
+            
+            const pdfQaTab = document.getElementById('pdf-qa');
+            pdfQaTab.insertBefore(dropArea, pdfQaTab.firstChild);
+            
+            dropArea.addEventListener('click', () => {
+                document.getElementById('pdfDropUpload').click();
+            });
+            
+            document.getElementById('pdfDropUpload').addEventListener('change', function() {
+                handlePdfUpload(this.files);
+            });
+            
+            // Drag and drop events
+            dropArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropArea.classList.add('dragover');
+            });
+            
+            dropArea.addEventListener('dragleave', () => {
+                dropArea.classList.remove('dragover');
+            });
+            
+            dropArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropArea.classList.remove('dragover');
+                
+                if (e.dataTransfer.files.length) {
+                    handlePdfUpload(e.dataTransfer.files);
+                }
+            });
+        }
+        
+        function handlePdfUpload(files) {
+            if (!files || files.length === 0) return;
+            
+            const formData = new FormData();
+            formData.append('file', files[0]);
+            
+            showLoading();
+            
+            fetch('/api/upload/pdf', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    loadUploadedPdfs();
+                } else {
+                    alert('Error uploading PDF: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Error uploading PDF: ' + error.message);
+            })
+            .finally(() => {
+                hideLoading();
+            });
+        }
+        
+        function loadUploadedPdfs() {
+            fetch('/api/uploads/list')
+            .then(response => response.json())
+            .then(data => {
+                uploadedPdfs = data.files || [];
+                updatePdfSelect();
+            })
+            .catch(error => {
+                console.error('Error loading PDFs:', error);
+            });
+        }
+        
+        function updatePdfSelect() {
+            const pdfSelect = document.getElementById('pdfSelect');
+            pdfSelect.innerHTML = '';
+            
+            if (uploadedPdfs.length === 0) {
+                pdfSelect.innerHTML = '<option value="">No PDFs uploaded</option>';
+                return;
+            }
+            
+            uploadedPdfs.forEach(pdf => {
+                const option = document.createElement('option');
+                option.value = pdf.path;
+                option.textContent = pdf.name;
+                pdfSelect.appendChild(option);
+            });
+        }
+        
+        function askAboutPdf() {
+            const pdfPath = document.getElementById('pdfSelect').value;
+            const question = document.getElementById('pdfQuestion').value.trim();
+            
+            if (!pdfPath || !question) {
+                alert('Please select a PDF and enter a question');
+                return;
+            }
+            
+            showLoading();
+            
+            fetch('/api/pdf/ask', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    pdf_path: pdfPath,
+                    question: question
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    displayPdfAnalysisResult(data.answer);
+                } else {
+                    alert('Error analyzing PDF: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Error analyzing PDF: ' + error.message);
+            })
+            .finally(() => {
+                hideLoading();
+            });
+        }
+        
+        function displayPdfAnalysisResult(answer) {
+            const resultsDiv = document.getElementById('pdfAnalysisResults');
+            resultsDiv.innerHTML = `
+                <div class="ai-response">
+                    ${markdownToHtml(answer)}
+                </div>
+            `;
+        }
+        
+        function markdownToHtml(markdown) {
+            // Simple markdown to HTML conversion
+            return markdown
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // bold
+                .replace(/\*(.*?)\*/g, '<em>$1</em>') // italic
+                .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>') // code blocks
+                .replace(/`(.*?)`/g, '<code>$1</code>') // inline code
+                .replace(/^#\s(.*$)/gm, '<h3>$1</h3>') // h1
+                .replace(/^##\s(.*$)/gm, '<h4>$1</h4>') // h2
+                .replace(/^###\s(.*$)/gm, '<h5>$1</h5>') // h3
+                .replace(/^\-\s(.*$)/gm, '<li>$1</li>') // unordered list
+                .replace(/^\d\.\s(.*$)/gm, '<li>$1</li>') // ordered list
+                .replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank">$1</a>') // links
+                .replace(/\n/g, '<br>'); // line breaks
+        }
+        
+        function downloadClientData() {
+            const clientId = document.getElementById('downloadClientSelect').value;
+            const items = [];
+            
+            if (document.getElementById('downloadSensor').checked) items.push('sensor');
+            if (document.getElementById('downloadCamera').checked) items.push('camera');
+            if (document.getElementById('downloadSpectrogram').checked) items.push('spectrogram');
+            if (document.getElementById('downloadAudio').checked) items.push('audio');
+            if (document.getElementById('downloadMetadata').checked) items.push('metadata');
+            
+            if (items.length === 0) {
+                alert('Please select at least one item to download');
+                return;
+            }
+            
+            showLoading();
+            
+            fetch(`/api/download/client/${clientId}?items=${items.join(',')}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to download client data');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `client_${clientId}_data.zip`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            })
+            .catch(error => {
+                alert('Error downloading client data: ' + error.message);
+            })
+            .finally(() => {
+                hideLoading();
+            });
+        }
+        
+        function downloadRecording(recordingId) {
+            showLoading();
+            
+            fetch(`/api/download/recording/${recordingId}`)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to download recording');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `bat_recording_${recordingId}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            })
+            .catch(error => {
+                alert('Error downloading recording: ' + error.message);
+            })
+            .finally(() => {
+                hideLoading();
+            });
+        }
+        
+        function generateCustomReport() {
+            const reportType = 'custom';
+            const title = document.getElementById('reportTitle').value;
+            const dateRange = document.getElementById('reportDateRange').value;
+            const startDate = dateRange === 'custom' ? document.getElementById('reportStartDate').value : null;
+            const endDate = dateRange === 'custom' ? document.getElementById('reportEndDate').value : null;
+            const clients = Array.from(document.getElementById('reportClients').selectedOptions).map(o => o.value);
+            const format = document.querySelector('input[name="reportFormat"]:checked').value;
+            
+            const sections = [];
+            if (document.getElementById('sectionSummary').checked) sections.push('summary');
+            if (document.getElementById('sectionSpecies').checked) sections.push('species');
+            if (document.getElementById('sectionActivity').checked) sections.push('activity');
+            if (document.getElementById('sectionRecommendations').checked) sections.push('recommendations');
+            if (document.getElementById('sectionRawData').checked) sections.push('raw_data');
+            
+            showLoading();
+            
+            fetch('/api/generate/report', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    report_type: reportType,
+                    title: title,
+                    date_range: dateRange,
+                    start_date: startDate,
+                    end_date: endDate,
+                    clients: clients,
+                    sections: sections,
+                    format: format
+                })
+            })
+            .then(response => {
+                if (format === 'pdf') {
+                    return response.blob().then(blob => {
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `bat_report_${new Date().toISOString().slice(0,10)}.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    });
+                } else {
+                    return response.blob().then(blob => {
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `bat_report_${new Date().toISOString().slice(0,10)}.xlsx`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                    });
+                }
+            })
+            .catch(error => {
+                alert('Error generating report: ' + error.message);
+            })
+            .finally(() => {
+                hideLoading();
+            });
+        }
+        
+        function exportAllData() {
+            showLoading();
+            
+            fetch('/api/export/excel')
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to export data');
+                }
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `bat_calls_export_${new Date().toISOString().slice(0,10)}.xlsx`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            })
+            .catch(error => {
+                alert('Error exporting data: ' + error.message);
+            })
+            .finally(() => {
+                hideLoading();
+            });
+        }
+        
+        // Modified AI chat function to use GROQ
+        function askAI(question) {
+            showLoading();
+            
+            // Add user question to chat
+            const chatMessages = document.getElementById('chatMessages');
+            const userMessage = document.createElement('div');
+            userMessage.className = 'message user-message';
+            userMessage.textContent = question;
+            chatMessages.appendChild(userMessage);
+            
+            // Add to history
+            chatHistory.push({
+                sender: 'user',
+                message: question,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Show typing indicator
+            const typingIndicator = document.createElement('div');
+            typingIndicator.className = 'message bot-message';
+            typingIndicator.innerHTML = '<i class="bi bi-three-dots"></i>';
+            chatMessages.appendChild(typingIndicator);
+            
+            // Scroll to bottom
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            // Show AI tab
+            showTab('ai-assistant');
+            
+            // Call GROQ API
+            fetch('/api/groq/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    question: question,
+                    history: JSON.stringify(chatHistory)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Remove typing indicator
+                chatMessages.removeChild(typingIndicator);
+                
+                if (data.success) {
+                    // Add AI response
+                    const aiResponse = document.createElement('div');
+                    aiResponse.className = 'message bot-message ai-response';
+                    aiResponse.innerHTML = markdownToHtml(data.answer);
+                    chatMessages.appendChild(aiResponse);
+                    
+                    // Add to history
+                    chatHistory.push({
+                        sender: 'assistant',
+                        message: data.answer,
+                        timestamp: new Date().toISOString()
+                    });
+                    
+                    // Scroll to bottom
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                } else {
+                    throw new Error(data.message || 'Failed to get response');
+                }
+            })
+            .catch(error => {
+                // Remove typing indicator
+                chatMessages.removeChild(typingIndicator);
+                
+                // Show error message
+                const errorMessage = document.createElement('div');
+                errorMessage.className = 'message bot-message text-danger';
+                errorMessage.textContent = 'Error: ' + error.message;
+                chatMessages.appendChild(errorMessage);
+                
+                // Scroll to bottom
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            })
+            .finally(() => {
+                hideLoading();
+            });
+        }
+
+        async function askReportQuestion(question) {
+    showLoading();
+    
+    const chatMessages = document.getElementById('chatMessages');
+    const userMessage = document.createElement('div');
+    userMessage.className = 'message user-message';
+    userMessage.textContent = question;
+    chatMessages.appendChild(userMessage);
+    
+    // Show typing indicator
+    const typingIndicator = document.createElement('div');
+    typingIndicator.className = 'message bot-message';
+    typingIndicator.innerHTML = '<i class="bi bi-three-dots"></i>';
+    chatMessages.appendChild(typingIndicator);
+    
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    showTab('ai-assistant');
+    
+    try {
+        const response = await fetch('/api/ask_report', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                question: question
+            })
+        });
+        
+        if (!response.ok) {
+            throw new Error(await response.text());
+        }
+        
+        const data = await response.json();
+        
+        // Remove typing indicator
+        chatMessages.removeChild(typingIndicator);
+        
+        const aiResponse = document.createElement('div');
+        aiResponse.className = 'message bot-message';
+        
+        // Format the response with markdown support
+        aiResponse.innerHTML = formatMarkdown(data.answer);
+        
+        // Add sources if available
+        if (data.sources && data.sources.length > 0) {
+            const sourcesDiv = document.createElement('div');
+            sourcesDiv.className = 'sources mt-2 small text-muted';
+            sourcesDiv.innerHTML = `<strong>Sources:</strong> ${data.sources.join(', ')}`;
+            aiResponse.appendChild(sourcesDiv);
+        }
+        
+        chatMessages.appendChild(aiResponse);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    } catch (error) {
+        chatMessages.removeChild(typingIndicator);
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'message bot-message text-danger';
+        errorMessage.textContent = 'Error: ' + error.message;
+        chatMessages.appendChild(errorMessage);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+    } finally {
+        hideLoading();
+    }
+}
+
+function formatMarkdown(text) {
+    // Simple markdown formatting
+    return text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
+        .replace(/`(.*?)`/g, '<code>$1</code>')
+        .replace(/\n/g, '<br>');
+}
         
         // Mobile sidebar toggle
         document.getElementById('sidebarToggle').addEventListener('click', function() {
@@ -2652,4 +3588,4 @@ function initializeApp() {
         });
     </script>
 </body>
-</html>
+</html>     

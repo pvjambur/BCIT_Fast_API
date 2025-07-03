@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse, StreamingResponse
@@ -15,20 +15,43 @@ import os
 import wave
 import contextlib
 import zipfile
+import pandas as pd
 import io
 import csv
+from pydantic import BaseModel
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Table, TableStyle
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.lib import colors
 from reportlab.lib.units import inch
 import ollama
+import requests
+from typing import Dict
+import numpy as np
+import faiss
+from transformers import AutoTokenizer, AutoModel
+import torch
+import pytesseract
+from pdf2image import convert_from_path
+import fitz  # PyMuPDF
 
 app = FastAPI()
 drive_client = DriveClient()
 
+GROQ_API_KEY = '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'
+GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
+GROQ_MODEL = 'llama3-70b-8192'
+
+report_faiss_index: Optional[faiss.IndexFlatIP] = None
+report_chunks: List[str] = []
+report_metadata: List[Dict] = []
+
+TOP_K = 5  # Number of top results to retrieve from FAISS index
+
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/reports", StaticFiles(directory="reports"), name="reports")
+app.mount("/downloads", StaticFiles(directory="downloads"), name="downloads")
 templates = Jinja2Templates(directory="templates")
 
 # Start the auto-refresh thread
@@ -359,39 +382,71 @@ async def get_bat_statistics():
         })
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+class AskResponse(BaseModel):
+    answer: str
+    question: str
+    chunks_used: int = 0
+    sources: list = []
 
-@app.get("/api/ask_ai")
-async def ask_ai(question: str, client_id: Optional[str] = None, species: Optional[str] = None):
-    try:
-        # Get context data
-        stats = drive_client.get_bat_stats()
-        clients = drive_client.get_clients_status()
+class AskRequest(BaseModel):
+    question: str
+    context: str = None
+
+class UploadResponse(BaseModel):
+    message: str
+    filename: str
+    chunks_added: int
+    total_chunks: int
+
+@app.post("/ask", response_model=AskResponse)
+async def ask_question(request: AskRequest):
+    # ... existing code to get document context ...
+    
+    # Get report context if available
+    report_context = ""
+    sources = set()
+    if report_faiss_index and report_faiss_index.ntotal > 0:
+        question_embedding = await get_embeddings([request.question])
+        if question_embedding.ndim == 1:
+            question_embedding = question_embedding.reshape(1, -1)
+        faiss.normalize_L2(question_embedding)
+        k = min(TOP_K, report_faiss_index.ntotal)
+        scores, indices = report_faiss_index.search(question_embedding, k)
         
-        # Prepare context string
-        context = {
-            "total_detections": stats.get('total_detections', 0),
-            "species": stats.get('species_count', {}),
-            "clients": clients,
-            "question": question
-        }
+        relevant_report_chunks = []
+        report_sources = set()
         
-        if client_id:
-            context['current_client'] = client_id
-        if species:
-            context['current_species'] = species
+        for i, idx in enumerate(indices[0]):
+            if idx >= 0 and idx < len(report_chunks) and scores[0][i] > 0.2:
+                chunk = report_chunks[idx]
+                chunk_meta = report_metadata[idx]
+                relevant_report_chunks.append(f"[Report: {chunk_meta['filename']}]: {chunk}")
+                report_sources.add(chunk_meta["filename"])
         
-        context_str = json.dumps(context, indent=2)
-        
-        # Get response from Ollama
-        response = get_ollama_response(question, context_str)
-        
-        return JSONResponse({
-            "status": "success",
-            "response": response,
-            "timestamp": int(time.time())
-        })
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        if relevant_report_chunks:
+            report_context = "\n\n".join(relevant_report_chunks)
+            sources.update(report_sources)
+    
+    # Define document_context (set to empty string or fetch as needed)
+    document_context = ""
+    full_context = ""
+    if document_context:
+        full_context += f"Document Context:\n{document_context}\n\n"
+    if report_context:
+        full_context += f"Report Context:\n{report_context}\n\n"
+    if request.context:
+        full_context += f"Meeting Context:\n{request.context}\n\n"
+    
+    messages = [{
+        "role": "system",
+        "content": "You are a helpful assistant. Answer questions based on the provided context."
+    }, {
+        "role": "user",
+        "content": f"{full_context}Question: {request.question}"
+    }]
+    
+    # ... rest of the function remains the same ...
+    # ... rest of the function remains the same ...
 
 @app.get("/api/generate_report")
 async def generate_report(
@@ -542,6 +597,466 @@ async def download_data(
             
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/groq/chat")
+async def groq_chat(question: str = Form(...), history: str = Form("[]")):
+    try:
+        history_data = json.loads(history)
+        
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a bat call monitoring assistant. Analyze the provided bat call data and answer questions professionally."
+            }
+        ]
+        
+        # Add history if available
+        for item in history_data:
+            messages.append({
+                "role": "user" if item["sender"] == "user" else "assistant",
+                "content": item["message"]
+            })
+        
+        # Add current question
+        messages.append({
+            "role": "user",
+            "content": question
+        })
+        
+        headers = {
+            "Authorization": f"Bearer {GROQ_API_KEY}",
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "model": GROQ_MODEL,
+            "messages": messages,
+            "temperature": 0.7
+        }
+        
+        response = requests.post(GROQ_API_URL, headers=headers, json=payload)
+        response.raise_for_status()
+        
+        result = response.json()
+        answer = result['choices'][0]['message']['content']
+        
+        return JSONResponse({
+            "answer": answer,
+            "success": True
+        })
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Allowed file extensions for upload
+ALLOWED_EXTENSIONS = {".pdf", ".docx", ".xlsx", ".xls", ".pptx", ".ppt"}
+
+# Define the directory for uploaded documents
+DOC_DIR = Path("documents")
+
+@app.post("/upload", response_model=UploadResponse)
+async def upload_file(file: UploadFile = File(...)):
+    if not file.filename or Path(file.filename).suffix.lower() not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Only PDF, DOCX, XLSX, XLS, PPTX, and PPT files are allowed")
+    
+    contents = await file.read()
+    if len(contents) > 200 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="File too large (max 200MB)")
+    
+    file_path = DOC_DIR / file.filename
+    if file_path.exists():
+        raise HTTPException(status_code=409, detail="File already exists")
+    
+    try:
+        DOC_DIR.mkdir(exist_ok=True, parents=True)
+        
+        with open(file_path, "wb") as f:
+            f.write(contents)
+        
+        # Check if this is a report (you might want a better way to identify reports)
+        is_report = "report" in file.filename.lower()
+        
+        if is_report:
+            chunks_added = await process_report_pdf(file_path, file.filename)
+        else:
+            # Dummy implementation for process_document_upload
+            async def process_document_upload(file_path, filename):
+                # You should implement actual document processing here
+                return 0
+            chunks_added = await process_document_upload(file_path, file.filename)
+        
+        total_chunks = len(report_chunks)  # 'chunks' is not defined, so only report_chunks are counted
+        
+        return UploadResponse(
+            message="File uploaded and processed successfully",
+            filename=file.filename,
+            chunks_added=chunks_added,
+            total_chunks=total_chunks
+        )
+    except Exception as e:
+        if file_path.exists():
+            file_path.unlink()
+        raise HTTPException(status_code=500, detail=f"Failed to process file: {str(e)}")
+
+async def query_groq(messages):
+            """
+            Sends a chat completion request to the Groq API and returns the answer.
+            """
+            import aiohttp
+            headers = {
+                "Authorization": f"Bearer {GROQ_API_KEY}",
+                "Content-Type": "application/json"
+            }
+            payload = {
+                "model": GROQ_MODEL,
+                "messages": messages,
+                "temperature": 0.7
+            }
+            async with aiohttp.ClientSession() as session:
+                async with session.post(GROQ_API_URL, headers=headers, json=payload) as resp:
+                    resp.raise_for_status()
+                    result = await resp.json()
+                    return result['choices'][0]['message']['content']
+
+@app.post("/ask_report", response_model=AskResponse)
+async def ask_report_question(request: AskRequest):
+    if report_faiss_index is None or report_faiss_index.ntotal == 0:
+        raise HTTPException(status_code=404, detail="No reports uploaded yet")
+    
+    try:
+        question_embedding = await get_embeddings([request.question])
+        
+        if question_embedding.ndim == 1:
+            question_embedding = question_embedding.reshape(1, -1)
+        
+        faiss.normalize_L2(question_embedding)
+        
+        k = min(TOP_K, report_faiss_index.ntotal)
+        scores, indices = report_faiss_index.search(question_embedding, k)
+        
+        relevant_chunks = []
+        sources = set()
+        
+        for i, idx in enumerate(indices[0]):
+            if idx >= 0 and idx < len(report_chunks) and scores[0][i] > 0.2:
+                chunk = report_chunks[idx]
+                chunk_meta = report_metadata[idx]
+                relevant_chunks.append(f"[From {chunk_meta['filename']}]: {chunk}")
+                sources.add(chunk_meta["filename"])
+        
+        if not relevant_chunks:
+            return AskResponse(
+                answer="No relevant information found in reports",
+                question=request.question,
+                chunks_used=0,
+                sources=[]
+            )
+        
+        context = "\n\n".join(relevant_chunks)
+        
+        messages = [{
+            "role": "system",
+            "content": "You are a report analysis assistant. Answer questions based on the provided report context."
+        }, {
+            "role": "user",
+            "content": f"Report Context:\n{context}\n\nQuestion: {request.question}"
+        }]
+        
+        answer = await query_groq(messages=messages)
+                
+        return AskResponse(
+                    answer=answer,
+                    question=request.question,
+                    chunks_used=len(relevant_chunks),
+                    sources=list(sources)
+                )
+        
+        
+    except Exception as e:
+        import logging
+        logger = logging.getLogger("bat_app")
+        logger.error(f"Error querying reports: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to query reports: {str(e)}")
+
+@app.post("/api/generate/report")
+async def generate_report(
+    report_type: str = Form(...),
+    client_id: str = Form(None),
+    start_date: str = Form(None),
+    end_date: str = Form(None)
+):
+    try:
+        # Get data based on parameters
+        # This would query your database in a real application
+        report_data = get_report_data(report_type, client_id, start_date, end_date)
+        
+        # Generate PDF
+        pdf_path = create_pdf_report(report_data, report_type)
+        
+        return FileResponse(
+            pdf_path,
+            media_type='application/pdf',
+            filename=f"bat_report_{datetime.now().strftime('%Y%m%d')}.pdf"
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+def create_pdf_report(data, report_type):
+    styles = getSampleStyleSheet()
+    report_dir = "reports"
+    os.makedirs(report_dir, exist_ok=True)
+    
+    filename = f"bat_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+    filepath = os.path.join(report_dir, filename)
+    
+    doc = SimpleDocTemplate(filepath, pagesize=letter)
+    elements = []
+    
+    # Title
+    elements.append(Paragraph(f"Bat Call Monitoring Report - {report_type.capitalize()}", styles['Title']))
+    elements.append(Spacer(1, 12))
+    
+    # Add content based on report type
+    if report_type == "daily":
+        # Add daily report content
+        pass
+    elif report_type == "species":
+        # Add species report content
+        pass
+    
+    # Build PDF
+    doc.build(elements)
+    return filepath
+
+@app.get("/api/download/recording/{recording_id}")
+async def download_recording(recording_id: str):
+    try:
+        # In a real app, this would get the recording from your storage
+        recording_dir = f"recordings/{recording_id}"
+        
+        if not os.path.exists(recording_dir):
+            raise HTTPException(status_code=404, detail="Recording not found")
+            
+        # Create zip file in memory
+        zip_filename = f"bat_recording_{recording_id}.zip"
+        zip_buffer = io.BytesIO()
+        
+        with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED, False) as zip_file:
+            for root, dirs, files in os.walk(recording_dir):
+                for file in files:
+                    file_path = os.path.join(root, file)
+                    zip_file.write(file_path, os.path.basename(file_path))
+                    
+            # Add metadata
+            metadata = {
+                "recording_id": recording_id,
+                "timestamp": datetime.now().isoformat(),
+                "species": "Pipistrellus pipistrellus",  # Would come from your data
+                "confidence": 0.92  # Would come from your data
+            }
+            
+            zip_file.writestr("metadata.json", json.dumps(metadata))
+            
+        zip_buffer.seek(0)
+        
+        return StreamingResponse(
+            zip_buffer,
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment;filename={zip_filename}"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/download/client/{client_id}")
+async def download_client_data(client_id: str, items: str = "all"):
+    try:
+        # Determine which items to include
+        include_items = items.split(',') if items != "all" else [
+            "sensor", "camera", "spectrogram", "audio", "metadata"
+        ]
+        
+        # Create zip file
+        zip_filename = f"client_{client_id}_data.zip"
+        zip_buffer = io.BytesIO()
+        
+        with zipfile.ZipFile(zip_buffer, 'a', zipfile.ZIP_DEFLATED, False) as zip_file:
+            # Add selected files
+            if "sensor" in include_items:
+                # Add sensor data
+                pass
+                
+            if "camera" in include_items:
+                # Add camera images
+                pass
+                
+            # Add other requested items...
+            
+            # Add metadata
+            metadata = {
+                "client_id": client_id,
+                "timestamp": datetime.now().isoformat(),
+                "items_included": include_items
+            }
+            zip_file.writestr("metadata.json", json.dumps(metadata))
+            
+        zip_buffer.seek(0)
+        
+        return StreamingResponse(
+            zip_buffer,
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment;filename={zip_filename}"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/export/excel")
+async def export_excel(
+    client_id: str = None,
+    start_date: str = None,
+    end_date: str = None
+):
+    try:
+        # Get data (would query your database in real app)
+        data = get_export_data(client_id, start_date, end_date)
+        
+        # Create DataFrame
+        df = pd.DataFrame(data)
+        
+        # Create Excel file in memory
+        excel_buffer = io.BytesIO()
+        with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Bat Calls')
+            
+        excel_buffer.seek(0)
+        
+        return StreamingResponse(
+            excel_buffer,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": "attachment;filename=bat_calls_export.xlsx"}
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+def get_report_data(report_type, client_id, start_date, end_date):
+    # This would query your database in a real application
+    return {
+        "type": report_type,
+        "client": client_id,
+        "period": f"{start_date} to {end_date}",
+        "data": []  # Actual data would go here
+    }
+
+def get_export_data(client_id, start_date, end_date):
+    # This would query your database in a real application
+    return [
+        {"timestamp": "2023-06-15 21:42:15", "species": "Pipistrellus pipistrellus", "confidence": 0.92},
+        # More data...
+    ]
+
+import logging
+
+async def get_embeddings(texts):
+    """
+    Generate embeddings for a list of texts using a transformer model.
+    """
+    tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+    model = AutoModel.from_pretrained("sentence-transformers/all-MiniLM-L6-v2")
+    encoded_input = tokenizer(texts, padding=True, truncation=True, return_tensors='pt')
+    with torch.no_grad():
+        model_output = model(**encoded_input)
+    embeddings = model_output.last_hidden_state.mean(dim=1).cpu().numpy()
+    return embeddings
+
+def count_tokens(text: str) -> int:
+    """
+    Counts the number of tokens (words) in the given text.
+    You may replace this with a more sophisticated tokenizer if needed.
+    """
+    return len(text.split())
+
+def initialize_report_index():
+    global report_faiss_index, report_chunks, report_metadata
+    report_faiss_index = faiss.IndexFlatIP(384)  # Same dimension as your embedding model
+    report_chunks = []
+    report_metadata = []
+    logger = logging.getLogger("bat_app")
+    logger.info("Initialized FAISS index for reports")
+
+def extract_text_from_pdf_with_ocr(pdf_path: Path) -> str:
+    logger = logging.getLogger("bat_app")
+    try:
+        # First try regular text extraction
+        doc = fitz.open(str(pdf_path))
+        text = ""
+        for page in doc:
+            text += page.get_text()
+        
+        if text.strip():
+            return text.strip()
+        
+        # Fall back to OCR if no text found
+        images = convert_from_path(str(pdf_path))
+        ocr_text = ""
+        for i, image in enumerate(images):
+            ocr_text += f"\n--- Page {i+1} ---\n" + pytesseract.image_to_string(image)
+        return ocr_text.strip()
+    except Exception as e:
+        logger.error(f"Error extracting text from PDF: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to extract text from PDF: {str(e)}")
+
+async def process_report_pdf(pdf_path: Path, filename: str):
+    global report_faiss_index, report_chunks, report_metadata
+
+    def chunk_text(text: str, max_tokens: int = 300) -> list:
+        """
+        Splits text into chunks of approximately max_tokens words.
+        """
+        words = text.split()
+        chunks = []
+        for i in range(0, len(words), max_tokens):
+            chunk = " ".join(words[i:i + max_tokens])
+            if chunk.strip():
+                chunks.append(chunk)
+        return chunks
+
+    logger = logging.getLogger("bat_app")
+    try:
+        text = extract_text_from_pdf_with_ocr(pdf_path)
+        if not text.strip():
+            raise HTTPException(status_code=400, detail="No text found in report PDF")
+
+        # Chunk the text
+        chunks = chunk_text(text)
+        if not chunks:
+            raise HTTPException(status_code=400, detail="Failed to create chunks from report")
+
+        # Get embeddings
+        embeddings = await get_embeddings(chunks)
+
+        if embeddings.ndim == 1:
+            embeddings = embeddings.reshape(1, -1)
+
+        faiss.normalize_L2(embeddings)
+
+        if report_faiss_index is None:
+            initialize_report_index()
+
+        report_faiss_index.add(embeddings)
+
+        for i, chunk in enumerate(chunks):
+            report_chunks.append(chunk)
+            report_metadata.append({
+                "filename": filename,
+                "chunk_index": i,
+                "timestamp": datetime.now().isoformat(),
+                "token_count": count_tokens(chunk)
+            })
+
+        logger.info(f"Added {len(chunks)} chunks from report {filename}")
+        return len(chunks)
+    except Exception as e:
+        logger.error(f"Error processing report PDF: {e}")
+        raise
 
 @app.on_event("shutdown")
 def shutdown_event():
