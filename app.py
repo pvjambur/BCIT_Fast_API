@@ -38,7 +38,7 @@ import fitz  # PyMuPDF
 app = FastAPI()
 drive_client = DriveClient()
 
-GROQ_API_KEY = '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'
+GROQ_API_KEY = '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'
 GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
 GROQ_MODEL = 'llama3-70b-8192'
 
