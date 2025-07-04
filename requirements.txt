@@ -29,5 +29,3 @@ google-cloud-storage
 pandas
 scikit-learn
 scipy
-google-cloud-vision
-google-cloud-texttospeech
