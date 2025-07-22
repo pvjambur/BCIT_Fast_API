@@ -13,6 +13,7 @@ import re
 from typing import Dict, List, Optional
 import os
 import wave
+from dotenv import load_dotenv
 import contextlib
 import zipfile
 import pandas as pd
@@ -26,12 +27,25 @@ from reportlab.lib import colors
 from reportlab.lib.units import inch
 import requests
 
+load_dotenv()
+
+
+
+
+GROQ_API_KEY = os.getenv('GROQ_API_KEY')
+GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
+GROQ_MODEL = 'llama3-70b-8192'
+
 app = FastAPI()
 drive_client = DriveClient()
 
-GROQ_API_KEY = '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'
-GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
-GROQ_MODEL = 'llama3-70b-8192'
+try:
+    gcp_creds = json.loads(os.getenv('GCP_CREDS'))
+    gcp_client_secret = json.loads(os.getenv('GCP_CLIENT_SECRET'))
+    drive_client = DriveClient(credentials=gcp_creds, client_secret=gcp_client_secret)
+except (json.JSONDecodeError, TypeError) as e:
+    raise RuntimeError("Failed to load Google Cloud credentials from environment variables") from e
+
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -247,6 +261,11 @@ def get_groq_summary(context: str) -> str:
 
 @app.get("/", response_class=HTMLResponse)
 async def read_root(request: Request, folder: str = None, client: str = None):
+    # First, immediately return a simple response
+    if not folder and not client:
+        return HTMLResponse(content="OK 200", status_code=200)
+    
+    # The rest of your existing functionality
     folders = drive_client.get_folder_status()
     selected_folder = None
     data = {
