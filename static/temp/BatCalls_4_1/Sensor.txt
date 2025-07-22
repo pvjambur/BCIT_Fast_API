@@ -1,0 +1,4 @@
+Client1 Temp: 25.91C
+Humidity: 63.82%
+Light: 10.42 lux
+Pressure: 918.28 hPa

@@ -13,6 +13,7 @@ reportlab
 python-dotenv
 asyncio
 logging
+dotenv
 fpdf
 pdf2image
 pytesseract
