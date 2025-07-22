@@ -12,20 +12,12 @@ from datetime import datetime
 import json
 import wave
 import contextlib
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class DriveClient:
     def __init__(self):
-        # Get credentials from environment variables
-        self.gcp_creds = json.loads(os.getenv('GCP_CREDS'))
-        self.gcp_client_secret = json.loads(os.getenv('GCP_CLIENT_SECRET'))
-        
         self.drive = self._initialize_drive()
         self.root_folder_id = 'root'
         self.local_temp = "static/temp"
@@ -49,37 +41,24 @@ class DriveClient:
 
     def _initialize_drive(self):
         try:
-            # Create settings dict from environment variables
-            settings = {
-                "client_config_backend": "settings",
-                "save_credentials": False,  # We'll handle this manually
-                "client_config": self.gcp_client_secret,
-                "get_refresh_token": True
-            }
-            
-            gauth = GoogleAuth(settings=settings)
-            
-            # Create credentials dict from environment variables
-            if self.gcp_creds:
-                gauth.credentials = type('object', (), {
-                    'access_token': self.gcp_creds.get('access_token'),
-                    'refresh_token': self.gcp_creds.get('refresh_token'),
-                    'token_uri': self.gcp_creds.get('token_uri'),
-                    'client_id': self.gcp_creds.get('client_id'),
-                    'client_secret': self.gcp_creds.get('client_secret'),
-                    'scopes': ['https://www.googleapis.com/auth/drive'],
-                    'token_expiry': None  # Will be set during refresh
-                })
-            
-            # Refresh if needed
-            if gauth.access_token_expired:
+            gauth = GoogleAuth()
+            # Try to load saved credentials
+            gauth.LoadCredentialsFile("credentials.json")
+            if gauth.credentials is None:
+                # Authenticate if they're not there
+                gauth.LocalWebserverAuth()
+            elif gauth.access_token_expired:
+                # Refresh them if expired
                 gauth.Refresh()
-            
+            else:
+                # Initialize the saved creds
+                gauth.Authorize()
+            # Save the current credentials to a file
+            gauth.SaveCredentialsFile("credentials.json")
             return GoogleDrive(gauth)
-            
         except Exception as e:
             logger.error(f"Error initializing drive: {e}")
-            
+            # Fall back to settings.yaml if credentials.json doesn't exist
             if not Path("credentials.json").exists():
                 logger.info("Trying to authenticate using settings.yaml")
                 gauth = GoogleAuth(settings_file='settings.yaml')
